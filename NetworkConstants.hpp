@@ -18,6 +18,7 @@ extern const int64_t kMaxEpochs;
 extern const float kLearningRate;
 extern const float kSplitRatio;
 extern const double kMinimumLoss;
+extern const bool kIncludeBias;
 
 extern const int64_t input_size;
 extern const int64_t hidden_size;

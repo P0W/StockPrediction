@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 #ifdef _MSC_VER
       "D:/playground/StockPrediction/BSE100.csv";
 #else
-      "/home/powprashant/Downloads/example-app/BSE100.csv";
+      NetworkConstants::kRootFolder + "BSE100.csv";
 #endif // _MSC_VER
 
      
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<NetworkTrainer> model =
         std::make_shared<StockNetworkTrainer>(stockSymbol, minmaxScaler, std::get<2>(trainData));
 
-    model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.txt", y_train);
+    model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv", y_train);
 
     torch::Tensor y_pred = model->fit(x_train, y_train);
   }

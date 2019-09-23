@@ -28,10 +28,10 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
   torch::nn::LSTMOptions lstmOpts2(hidden, hidden);
   lstmOpts1.layers(numLayers)
       .dropout(NetworkConstants::klsmt1DropOut)
-      .with_bias(false);
+      .with_bias(NetworkConstants::kIncludeBias);
   lstmOpts2.layers(numLayers)
       .dropout(NetworkConstants::klsmt2DropOut)
-      .with_bias(false);
+      .with_bias(NetworkConstants::kIncludeBias);
 
   torch::nn::LinearOptions linearOpts(hidden, output);
   linearOpts.with_bias(false);
@@ -72,7 +72,7 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
   Timer t2("Epoch Time: %.2f ");
 
   const std::string neuralNetLogFile = modelName + ".pt";
-  const std::string predictLogFile = modelName + "_pred.txt";
+  const std::string predictLogFile = modelName + "_pred.csv";
 
   if (!modelName.empty()) {
     try {
@@ -107,7 +107,7 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
       return y_pred;
     }
 
-    else if (running_loss <= NetworkConstants::kMinimumLoss) {
+    else if (running_loss < NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
       dataWriter(predictLogFile, y_pred);
       return y_pred;

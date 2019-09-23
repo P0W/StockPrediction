@@ -3,28 +3,15 @@
 <head>
     <script src="https://d3js.org/d3.v4.min.js"></script>
 </head>
-<h1 id="output">
-</h1>
+<h1>This is a h1 header.</h1>
 <table>
     <tr>
         <td>
-            <canvas id="canvas_d3_raw" height="600px" width="600px" style="margin: 30px; background-color:azure">
+            <canvas id="canvas_d3_raw" height="600px" width="1800px" style="margin: 30px; background-color:azure">
             </canvas>
         </td>
         <td>
-            <canvas id="canvas_d3_cleared" height="600px" width="600px" style="margin: 30px; background-color:azure">
-            </canvas>
-        </td>
-
-
-    </tr>
-    <tr>
-        <td>
-            <canvas id="canvas_raw" height="600px" width="600px" style="margin: 30px; background-color:azure">
-            </canvas>
-        </td>
-        <td>
-            <canvas id="canvas_cleared" height="600px" width="600px" style="margin: 30px; background-color:azure">
+            <canvas id="canvas_d3_cleared" height="600px" width="800px" style="margin: 30px; background-color:azure">
             </canvas>
         </td>
     </tr>
@@ -49,7 +36,7 @@
             var xMin = xRange[0];
             var xMax = xRange[1];
 
-            var axesWidth = 500;
+            var axesWidth = 1500;
             pixelValue = Math.round(((rawValue - xMin) / (xMax - xMin)) * axesWidth);
         } else if (type === "y") {
             var yMin = yRange[0];
@@ -139,7 +126,8 @@
     function drawCurve(fileName, canvasID, color, curveFunc) {
         d3.csv(fileName, function (d) {
             return {
-                price: parseFloat(d.price)
+                'date': d.date,
+                'price': parseFloat(d.price)
             };
 
         }, function (error, data) {
@@ -147,7 +135,7 @@
 
             data.forEach((val, index) => {
                 dataSet.push({
-                    x: index,
+                    x: index, //val.date,
                     y: val.price
                 });
             });
@@ -177,8 +165,10 @@
         currentCompany = data[data.length - 1].company;
 
         if (currentSymbol !== null) {
-            drawCurve(currentSymbol + '_train.txt', 'canvas_d3_raw', 'blue', drawd3Curve);
-            drawCurve(currentSymbol + '_pred.txt', 'canvas_d3_raw', 'red', drawd3Curve);
+          var h1 = d3.select('h1');
+          h1.text(currentCompany);
+            drawCurve(currentSymbol + '_train.csv', 'canvas_d3_raw', 'blue', drawd3Curve);
+            drawCurve(currentSymbol + '_pred.csv', 'canvas_d3_raw', 'red', drawd3Curve);
         }
     });
 
