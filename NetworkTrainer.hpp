@@ -27,7 +27,7 @@ class NetworkTrainer {
   void saveModel(const std::string& fileName) const;
   void loadModel(const std::string& fileName);
 
-  virtual void dataWriter(const std::string& fileName, const torch::Tensor& data) { (void)data; }
+  virtual void dataWriter(const std::string& fileName, const torch::Tensor& data) { (void)data; (void)fileName; }
 
  private:
   bool gpuAvailable;
