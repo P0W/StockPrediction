@@ -11,7 +11,7 @@
 class ITimeSeries {
  public:
   virtual ~ITimeSeries() {}
-  virtual void loadTimeSeries() = 0;
+  virtual bool loadTimeSeries() = 0;
   virtual void normalizeData() = 0;
   virtual void reshapeSeries(float testSplitRatio) = 0;
 };

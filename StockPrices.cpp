@@ -5,69 +5,109 @@
  *      Author: Prashant Srivastava
  */
 
-#include "StockPrices.hpp"
+#include "csv.h"
+#ifdef _MSC_VER 
+#include<Windows.h>
+#pragma comment(lib, "urlmon.lib")
+#else
 #include <curl/curl.h>
+#endif
+
+#include "StockPrices.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <vector>
 #include "MinMaxScaler.hpp"
 #include "NetworkConstants.hpp"
-#include "csv.h"
+
 
 namespace {
 
-size_t downloadDataCallback(void *ptr, size_t size, size_t nmemb,
-                            FILE *stream) {
-  size_t written = fwrite(ptr, size, nmemb, stream);
+    size_t downloadDataCallback(void *ptr, size_t size, size_t nmemb,
+        FILE *stream) {
+        size_t written = fwrite(ptr, size, nmemb, stream);
 
-  std::printf("Downloaded %ld byte(s).\n", written);
-  return written;
-}
+        std::printf("Downloaded %ld byte(s).\n", written);
+        return written;
+    }
 
-const char *quandlToken = "?api_key=B3L7ZHSVh3sV5cyRZPFW";
+    const char *quandlToken = "?api_key=B3L7ZHSVh3sV5cyRZPFW";
 
-const char *url = "https://www.quandl.com/api/v3/datasets/BSE/";
+    const char *url = "https://www.quandl.com/api/v3/datasets/BSE/";
 
-int downloadStockData(const std::string &stockSymbol) {
-  CURL *curl;
-  FILE *fp;
+    int downloadStockData(const std::string &stockSymbol) {
+        char csvFileName[FILENAME_MAX];
+        char queryUrl[FILENAME_MAX];
 
-  char csvFileName[FILENAME_MAX];
-  char queryUrl[FILENAME_MAX];
+        strcpy(csvFileName, stockSymbol.c_str());
+        strcat(csvFileName, ".csv");
 
-  strcpy(csvFileName, stockSymbol.c_str());
-  strcat(csvFileName, ".csv");
+        std::string downLoadFile = NetworkConstants::kRootFolder + csvFileName;
 
-  std::string downLoadFile = NetworkConstants::rootFolder + csvFileName;
+        strcpy(queryUrl, url);
+        strcat(queryUrl, csvFileName);
+        std::printf("Fectching %s [%s] ....\n", downLoadFile.c_str(), queryUrl);
+        strcat(queryUrl, quandlToken);
 
-  strcpy(queryUrl, url);
-  strcat(queryUrl, csvFileName);
-  std::printf("Fectching %s [%s] ....\n", downLoadFile.c_str(), queryUrl);
-  strcat(queryUrl, quandlToken);
+#ifndef _WIN32
+        FILE *fp = nullptr;
+        CURL *curl = curl_easy_init();
+        if (curl) {
+            fp = fopen(downLoadFile.c_str(), "wb");
+            curl_easy_setopt(curl, CURLOPT_URL, queryUrl);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, downloadDataCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+            (void)curl_easy_perform(curl);
 
-  curl = curl_easy_init();
-  if (curl) {
-    fp = fopen(downLoadFile.c_str(), "wb");
-    curl_easy_setopt(curl, CURLOPT_URL, queryUrl);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, downloadDataCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-    (void)curl_easy_perform(curl);
+            curl_easy_cleanup(curl);
+            fclose(fp);
+            return 0;
+        }
+#elif defined(_MSC_VER)
 
-    curl_easy_cleanup(curl);
-    fclose(fp);
-  }
-  return 0;
-}
+        HRESULT res = URLDownloadToFile(NULL, queryUrl, downLoadFile.c_str(), 0, NULL);
+        if (res == S_OK) {
+            std::printf("Ok\n");
+            return 0;
+        }
+        else if (res == E_OUTOFMEMORY) {
+            std::printf("Buffer length invalid, or insufficient memory\n");
+        }
+        else if (res == INET_E_DOWNLOAD_FAILURE) {
+            std::printf("URL is invalid\n");
+        }
+        else {
+            std::printf("Other error: %d\n", res);
+        }
+#endif
+        return -1;
+    }
 }  // namespace
 
-StockData::StockData(std::string date, float val)
-    : date(date), closePrice(val) {}
-
-bool StockData::operator<(const StockData &other) {
-  return other.closePrice > this->closePrice;
+StockData::StockData(const std::string& date, float val)
+    : m_date(date), m_closePrice(val), m_dateNum(0), m_hasError(false) {
+    
+    int year, month, day;
+    if (std::sscanf(m_date.c_str(), "%d-%d-%d", &year, &month, &day) == 3) {
+        m_dateNum = 10000 * year + 100 * month + day;
+        m_hasError = false;
+    }
+    else {
+        m_hasError = true;
+    }
 }
 
-float StockData::getClosePrice() const { return closePrice; }
+bool StockData::operator<(const StockData &other) {
+  return other.m_dateNum > this->m_dateNum;
+}
+
+float StockData::getClosePrice() const { return m_closePrice; }
+std::string StockData::getDate() const { return m_date; }
+
+bool StockData::wasBadEntry() const
+{
+    return m_hasError;
+}
 
 StockPrices::StockPrices(const std::string &stockSymbol, int64_t prevSamples,
                          MinMaxScaler<float> &scaler)
@@ -76,15 +116,16 @@ StockPrices::StockPrices(const std::string &stockSymbol, int64_t prevSamples,
       scaler(scaler),
       stockClosePrices{},
       normalizedStockClosePrices{},
+      dates{},
       x_train{},
       y_train{} {}
 
 StockPrices::~StockPrices() {}
 
-void StockPrices::loadTimeSeries() {
+bool StockPrices::loadTimeSeries() {
   (void)downloadStockData(stockSymbol);
 
-  io::CSVReader<2> in(NetworkConstants::rootFolder + stockSymbol + ".csv");
+  io::CSVReader<2> in(NetworkConstants::kRootFolder + stockSymbol + ".csv");
   in.read_header(io::ignore_extra_column, "Date", "Close");
   std::string date;
   float close;
@@ -93,6 +134,12 @@ void StockPrices::loadTimeSeries() {
 
   while (in.read_row(date, close)) {
     stockData.emplace_back(StockData{date, close});
+  }
+
+  if (std::any_of(std::begin(stockData), std::begin(stockData), [](const StockData& s) {
+      return s.wasBadEntry();
+  })) {
+      return true;
   }
 
   std::sort(std::begin(stockData), std::end(stockData));
@@ -105,10 +152,17 @@ void StockPrices::loadTimeSeries() {
         std::begin(stockData) + (vecSize - NetworkConstants::kMaxStockPrices));
   }
   stockClosePrices.reserve(stockData.size());
+  dates.reserve(stockClosePrices.size());
 
   std::transform(std::begin(stockData), std::end(stockData),
                  std::back_inserter(stockClosePrices),
                  [](const StockData &s) { return s.getClosePrice(); });
+
+  std::transform(std::begin(stockData), std::end(stockData),
+      std::back_inserter(dates),
+      [](const StockData &s) { return s.getDate(); });
+
+  return false;
 }
 void StockPrices::reshapeSeries(float testSplitRatio) {
   int64_t test_size =
@@ -128,7 +182,7 @@ void StockPrices::normalizeData() {
   normalizedStockClosePrices = scaler.fit_transform(stockClosePrices);
 }
 
-std::pair<std::vector<float>, std::vector<float>> StockPrices::getTrainData()
-    const {
-  return std::make_pair(x_train, y_train);
+std::tuple<std::vector<float>, std::vector<float>, std::vector<std::string>> StockPrices::getTrainData()
+const {
+    return std::make_tuple(x_train, y_train, dates);
 }

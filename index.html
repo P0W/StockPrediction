@@ -74,86 +74,86 @@
 
 
 
-        function drawClockwise(points, canvasID, color) {
+    function drawClockwise(points, canvasID, color) {
 
-            var startX = -Infinity;
-            var isLinearlyIncreasing = points.every(point => {
-                if (point.x > startX) {
-                    startX = point.x;
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-            if (!isLinearlyIncreasing) {
-                // Find min max to get center
-                // Sort from top to bottom
+        var startX = -Infinity;
+        var isLinearlyIncreasing = points.every(point => {
+            if (point.x > startX) {
+                startX = point.x;
+                return true;
+            } else {
+                return false;
+            }
+        });
+        if (!isLinearlyIncreasing) {
+            // Find min max to get center
+            // Sort from top to bottom
 
-                points.sort((a, b) => a.y - b.y);
+            points.sort((a, b) => a.y - b.y);
 
-                // Get center y
-                const cy = (points[0].y + points[points.length - 1].y) / 2;
+            // Get center y
+            const cy = (points[0].y + points[points.length - 1].y) / 2;
 
-                // Sort from right to left
-                points.sort((a, b) => b.x - a.x);
+            // Sort from right to left
+            points.sort((a, b) => b.x - a.x);
 
-                // Get center x
-                const cx = (points[0].x + points[points.length - 1].x) / 2;
+            // Get center x
+            const cx = (points[0].x + points[points.length - 1].x) / 2;
 
-                // Center point
-                const center = { x: cx, y: cy };
+            // Center point
+            const center = { x: cx, y: cy };
 
-                // Pre calculate the angles as it will be slow in the sort
-                // As the points are sorted from right to left the first point
-                // is the rightmost
+            // Pre calculate the angles as it will be slow in the sort
+            // As the points are sorted from right to left the first point
+            // is the rightmost
 
-                // Starting angle used to reference other angles
-                var startAng;
-                points.forEach(point => {
-                    var ang = Math.atan2(point.y - center.y, point.x - center.x);
-                    if (!startAng) { startAng = ang }
-                    else {
-                        if (ang < startAng) {  // ensure that all points are clockwise of the start point
-                            ang += Math.PI * 2;
-                        }
+            // Starting angle used to reference other angles
+            var startAng;
+            points.forEach(point => {
+                var ang = Math.atan2(point.y - center.y, point.x - center.x);
+                if (!startAng) { startAng = ang }
+                else {
+                    if (ang < startAng) {  // ensure that all points are clockwise of the start point
+                        ang += Math.PI * 2;
                     }
-                    point.angle = ang; // add the angle to the point
-                });
+                }
+                point.angle = ang; // add the angle to the point
+            });
 
 
-                // first sort clockwise
-                points.sort((a, b) => a.angle - b.angle);
+            // first sort clockwise
+            points.sort((a, b) => a.angle - b.angle);
 
-                // then reverse the order
-                const ccwPoints = points.reverse();
+            // then reverse the order
+            const ccwPoints = points.reverse();
 
-                ccwPoints.unshift(ccwPoints.pop());
+            ccwPoints.unshift(ccwPoints.pop());
 
-                drawd3Curve(ccwPoints, canvasID, color);
-            }
-            else {
-                drawd3Curve(points, canvasID, color);
-            }
+            drawd3Curve(ccwPoints, canvasID, color);
         }
+        else {
+            drawd3Curve(points, canvasID, color);
+        }
+    }
 
     function drawCurve(fileName, canvasID, color, curveFunc) {
         d3.csv(fileName, function (d) {
             return {
                 price: parseFloat(d.price)
             };
-            
+
         }, function (error, data) {
             var dataSet = [];
 
-              data.forEach((val, index) => {
-                 dataSet.push({
+            data.forEach((val, index) => {
+                dataSet.push({
                     x: index,
                     y: val.price
-                 });
-              });
+                });
+            });
 
             // Add the dataset, and constrain to the clipping container
-            xRange = [ 0, data.length];
+            xRange = [0, data.length];
 
             yRange = this.d3.extent(data, function (d) {
                 return d.price;
@@ -165,8 +165,24 @@
     }
 
 
-    drawCurve('BOM500790_train.txt', 'canvas_d3_raw', 'blue', drawd3Curve);
-    drawCurve('BOM500790_pred.txt', 'canvas_d3_raw', 'red', drawd3Curve);
+    var currentSymbol = null, currentCompany = null;
+
+    d3.csv('stock_train.csv', function (d) {
+        return {
+            'symbol': d.Symbol,
+            'company': d.Company
+        }
+    }, function (error, data) {
+        currentSymbol = data[data.length - 1].symbol;
+        currentCompany = data[data.length - 1].company;
+
+        if (currentSymbol !== null) {
+            drawCurve(currentSymbol + '_train.txt', 'canvas_d3_raw', 'blue', drawd3Curve);
+            drawCurve(currentSymbol + '_pred.txt', 'canvas_d3_raw', 'red', drawd3Curve);
+        }
+    });
+
+
 </script>
 
 </html>

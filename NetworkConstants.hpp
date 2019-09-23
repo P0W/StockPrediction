@@ -13,10 +13,10 @@
 
 namespace NetworkConstants {
 
-extern const int64_t prevSamples;
-extern const int64_t maxEpochs;
-extern const float learningRate;
-extern const float splitRatio;
+extern const int64_t kPrevSamples;
+extern const int64_t kMaxEpochs;
+extern const float kLearningRate;
+extern const float kSplitRatio;
 extern const double kMinimumLoss;
 
 extern const int64_t input_size;
@@ -29,7 +29,7 @@ extern const double klsmt2DropOut;
 
 extern const size_t kMaxStockPrices;
 
-extern const std::string rootFolder;
+extern const std::string kRootFolder;
 
 }  // namespace NetworkConstants
 

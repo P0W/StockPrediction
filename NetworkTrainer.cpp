@@ -55,9 +55,13 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
   torch::Tensor loss;
   input = x_train.view({prevSamples, -1, 1});
 
+
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
     target = y_train.to(torch::kCUDA);
+  }
+  else {
+    target = y_train;
   }
 
   float running_loss = 1;
@@ -67,9 +71,12 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
   Timer t1("Total Elapsed Time: %2.f\n");
   Timer t2("Epoch Time: %.2f ");
 
+  const std::string neuralNetLogFile = modelName + ".pt";
+  const std::string predictLogFile = modelName + "_pred.txt";
+
   if (!modelName.empty()) {
     try {
-      loadModel(modelName);
+      loadModel(neuralNetLogFile);
       std::cout << "Loaded a existing trained model\n";
     } catch (...) {
       std::cout << "Starting a fresh training...\n";
@@ -96,22 +103,22 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
     if (epoch >= this->maxEpochs) {
       std::cout << "Loss is too high after epoch " << epoch << ": "
                 << running_loss << std::endl;
-      dataWriter(y_pred);
+      dataWriter(predictLogFile, y_pred);
       return y_pred;
     }
 
     else if (running_loss <= NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
-      dataWriter(y_pred);
+      dataWriter(predictLogFile, y_pred);
       return y_pred;
     }
 
     else if (epoch % 10 == 0) {
       t2.show(false);
       std::cout << " epoch " << epoch << " [Running Loss = " << running_loss
-                << " ( " << modelName << " ) ]\n";
-      saveModel(modelName);
-      dataWriter(y_pred);
+                << " ( " << neuralNetLogFile << " ) ]\n";
+      saveModel(neuralNetLogFile);
+      dataWriter(predictLogFile, y_pred);
     }
     epoch++;
   }

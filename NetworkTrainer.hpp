@@ -27,11 +27,7 @@ class NetworkTrainer {
   void saveModel(const std::string& fileName) const;
   void loadModel(const std::string& fileName);
 
-  virtual void dataWriter(const torch::Tensor& data) { (void)data; }
-
-  template <typename Functor>
-  void static saveTensor(const torch::Tensor& input, std::string fileName,
-                         const Functor& scaler);
+  virtual void dataWriter(const std::string& fileName, const torch::Tensor& data) { (void)data; }
 
  private:
   bool gpuAvailable;
@@ -41,20 +37,5 @@ class NetworkTrainer {
   std::shared_ptr<StockLSTM> lstmNetwork;
   std::shared_ptr<torch::optim::Optimizer> optimizer;
 };
-
-template <typename Functor>
-void NetworkTrainer::saveTensor(const torch::Tensor& input,
-                                std::string fileName, const Functor& scaler) {
-  std::ofstream fileHandle(fileName, std::ios::trunc);
-
-  fileHandle << "price\n";
-  if (fileHandle.good()) {
-    for (int64_t idx = 0; idx < input.size(0); ++idx) {
-      fileHandle << scaler(input[idx].item<float>()) << '\n';
-    }
-  }
-
-  fileHandle.close();
-}
 
 #endif /* NETWORKTRAINER_HPP_ */

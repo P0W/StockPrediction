@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <tuple>
 #include "ITimeSeries.hpp"
 
 template <typename T>
@@ -18,7 +19,7 @@ class MinMaxScaler;
 
 class StockData {
  public:
-  explicit StockData(std::string date, float val);
+  explicit StockData(const std::string& date, float val);
   ~StockData() = default;
   StockData(const StockData&) = default;
   StockData& operator=(const StockData&) = default;
@@ -26,10 +27,14 @@ class StockData {
   bool operator<(const StockData& other);
 
   float getClosePrice() const;
+  std::string getDate() const;
+  bool wasBadEntry() const;
 
  private:
-  std::string date;
-  float closePrice;
+  std::string m_date;
+  float m_closePrice;
+  uint64_t m_dateNum;
+  bool m_hasError;
 };
 
 class StockPrices : public ITimeSeries {
@@ -40,11 +45,11 @@ class StockPrices : public ITimeSeries {
   StockPrices(const StockPrices&) = delete;
   StockPrices& operator=(const StockPrices&) = delete;
 
-  virtual void loadTimeSeries() override;
+  virtual bool loadTimeSeries() override;
   virtual void reshapeSeries(float testSplitRatio) override;
   virtual void normalizeData() override;
 
-  std::pair<std::vector<float>, std::vector<float>> getTrainData() const;
+  std::tuple<std::vector<float>, std::vector<float>, std::vector<std::string>> getTrainData() const;
 
  private:
   std::string stockSymbol;
@@ -52,6 +57,7 @@ class StockPrices : public ITimeSeries {
   MinMaxScaler<float>& scaler;
   std::vector<float> stockClosePrices;
   std::vector<float> normalizedStockClosePrices;
+  std::vector<std::string> dates;
 
   std::vector<float> x_train;
   std::vector<float> y_train;
