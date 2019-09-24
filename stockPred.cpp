@@ -78,13 +78,7 @@ int main(int argc, char** argv) {
     stockSymbol = argv[1];
   }
 
-  const std::string bse100File =
-#ifdef _MSC_VER
-      "D:/playground/StockPrediction/BSE100.csv";
-#else
-      NetworkConstants::kRootFolder + "BSE100.csv";
-#endif // _MSC_VER
-
+  const std::string bse100File = NetworkConstants::kRootFolder + "BSE100.csv";
      
   MinMaxScaler<float> minmaxScaler;
   std::string companyName;
