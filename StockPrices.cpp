@@ -27,7 +27,7 @@ namespace {
         FILE *stream) {
         size_t written = fwrite(ptr, size, nmemb, stream);
 
-        std::printf("Downloaded %ld byte(s).\n", written);
+        std::printf("Downloaded %zd byte(s).\n", written);
         return written;
     }
 
@@ -46,7 +46,7 @@ namespace {
 
         strcpy(queryUrl, url);
         strcat(queryUrl, csvFileName);
-        std::printf("Fectching %s [%s] ....\n", downLoadFile.c_str(), queryUrl);
+        std::printf("Fetching %s [%s] ....\n", downLoadFile.c_str(), queryUrl);
         strcat(queryUrl, quandlToken);
 
 #ifndef _WIN32
