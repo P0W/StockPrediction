@@ -4,11 +4,6 @@
 
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-
-set(CUDNN_INCLUDE_DIR  "/home/powprashant/Downloads/cudnn-10.0-linux-x64-v7.6.2.24/cuda/include")
-set(CUDNN_LIBRARY "/home/powprashant/Downloads/cudnn-10.0-linux-x64-v7.6.2.24/cuda/lib64/libcudnn.so")
-
-
 project(buysAndsells)
 
 find_package(Torch REQUIRED)
@@ -31,16 +26,17 @@ if(MSVC)
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
   endif()
+  set(CMAKE_GENERATOR_PLATFORM, x64)
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   string(APPEND CMAKE_CXX_FLAGS_DEBUG " -g3")
   # Update if necessary
+  set(CUDNN_INCLUDE_DIR  "/home/powprashant/Downloads/cudnn-10.0-linux-x64-v7.6.2.24/cuda/include")
+  set(CUDNN_LIBRARY "/home/powprashant/Downloads/cudnn-10.0-linux-x64-v7.6.2.24/cuda/lib64/libcudnn.so")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -Wextra -pedantic -Werror")
 endif()
 
 
 if(WIN32)
-    #add_definitions(-DCURL_STATICLIB)
-    #link_directories("${CMAKE_SOURCE_DIR}/thirdparty/openssl/" "${CMAKE_SOURCE_DIR}/thirdparty/"curl_win32)
 else()
     link_directories("${CMAKE_SOURCE_DIR}/thirdparty/curl2")
 endif()
