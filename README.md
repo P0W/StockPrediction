@@ -12,6 +12,8 @@ _BITS Final Semester Project_
       * Check if supported [here](https://developer.nvidia.com/cuda-gpus)
       
       * Install CUDA Toolkit from [here](https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exenetwork)
+      
+      * Install Deep Learning SDK cuDNN from (here)[https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html]
 
 3. For Windows, need Microsoft Visual Studio >=17
 
