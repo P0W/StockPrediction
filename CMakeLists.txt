@@ -6,8 +6,6 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 project(buysAndsells)
 
-find_package(Torch REQUIRED)
-
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     find_package(CURL REQUIRED)
 endif()
@@ -34,6 +32,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -Wextra -pedantic -Werror")
 endif()
 
+find_package(Torch REQUIRED)
 
 if(WIN32)
 else()
