@@ -15,6 +15,7 @@ namespace NetworkConstants {
 
 extern const int64_t kPrevSamples;
 extern const int64_t kMaxEpochs;
+extern const double kMaxTrainTime;
 extern const float kLearningRate;
 extern const float kSplitRatio;
 extern const double kMinimumLoss;

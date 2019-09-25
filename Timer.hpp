@@ -17,6 +17,7 @@ class Timer {
   virtual ~Timer();
 
   void show(bool resetStartTime = true);
+  operator double();
 
  private:
   std::chrono::steady_clock::time_point startTime;

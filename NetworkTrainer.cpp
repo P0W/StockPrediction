@@ -100,7 +100,7 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
     optimizer->step();
 
     running_loss = loss.item<float>();
-    if (epoch >= this->maxEpochs) {
+    if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Loss is too high after epoch " << epoch << ": "
                 << running_loss << std::endl;
       dataWriter(predictLogFile, y_pred);
