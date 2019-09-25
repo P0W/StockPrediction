@@ -123,7 +123,11 @@ StockPrices::StockPrices(const std::string &stockSymbol, int64_t prevSamples,
 StockPrices::~StockPrices() {}
 
 bool StockPrices::loadTimeSeries() {
-  (void)downloadStockData(stockSymbol);
+  int errorCode = downloadStockData(stockSymbol);
+  if (errorCode != 0) {
+      std::printf("Cannot load %s\n", stockSymbol.c_str());
+      return true;
+  }
 
   io::CSVReader<2> in(NetworkConstants::kRootFolder + stockSymbol + ".csv");
   in.read_header(io::ignore_extra_column, "Date", "Close");
