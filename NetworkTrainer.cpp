@@ -19,7 +19,7 @@ namespace {
         std::ifstream checkHandle(fileName);
         bool fileExits = checkHandle.good();
         checkHandle.close();
-        std::ofstream fileHandle(fileName, std::ios::ate);
+        std::ofstream fileHandle(fileName, std::ios::app);
         if (fileHandle.good()) {
             if (!fileExits) {
                 fileHandle << "Symbol,Loss,Epochs,Duration\n";
