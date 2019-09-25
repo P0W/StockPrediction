@@ -130,7 +130,15 @@ bool StockPrices::loadTimeSeries() {
   }
 
   io::CSVReader<2> in(NetworkConstants::kRootFolder + stockSymbol + ".csv");
-  in.read_header(io::ignore_extra_column, "Date", "Close");
+  try {
+      in.read_header(io::ignore_extra_column, "Date", "Close");
+  }
+  catch (std::exception e) {
+      const auto errorMsg = e.what();
+      std::printf("%s - error reading %s\n", errorMsg, stockSymbol.c_str());
+      return true;
+  }
+
   std::string date;
   float close;
 
