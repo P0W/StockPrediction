@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
                           minmaxScaler);
     
     if (stockData.loadTimeSeries()) {
-        std::cout << stockSymbol << ":" << companyName << "has one or more bad entries\n";
+        std::cout << stockSymbol << ":" << companyName << " has one or more bad entries\n";
         continue;
     }
 
