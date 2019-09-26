@@ -53,7 +53,6 @@ class StockNetworkTrainer : public NetworkTrainer {
 void updateConfig(const std::string& configFileName, 
     const std::string& stockSymbol, 
     const std::string& stockName = "") {
-
     std::ifstream testFileHandle(configFileName);
     bool isPresent = testFileHandle.good();
     testFileHandle.close();
@@ -66,6 +65,39 @@ void updateConfig(const std::string& configFileName,
     fileHandle << stockSymbol << ',' << stockName << '\n';
     fileHandle.close();
 }
+
+bool NetworkTrainerFacade(
+    const std::string& stockSymbol, 
+    const std::string& companyName = "") {
+    
+  MinMaxScaler<float> minmaxScaler;
+  StockPrices stockData(minmaxScaler);
+  if (stockData.loadTimeSeries(stockSymbol)) {
+      std::cout << stockSymbol << ":" << companyName << " has one or more bad entries\n";
+      return false;
+  }
+
+  stockData.normalizeData();
+  stockData.reshapeSeries(NetworkConstants::kSplitRatio, NetworkConstants::kPrevSamples);
+
+  auto trainData = stockData.getTrainData();
+
+  // Convert values to Pytorch Tensors
+  torch::Tensor x_train = torch::tensor(std::get<0>(trainData));
+  torch::Tensor y_train = torch::tensor(std::get<1>(trainData));
+
+  // Record this stock for front end to update
+  updateConfig(NetworkConstants::kRootFolder + "stock_train.csv", stockSymbol, companyName);
+
+  std::shared_ptr<NetworkTrainer> model =
+      std::make_shared<StockNetworkTrainer>(stockSymbol, minmaxScaler, std::get<2>(trainData));
+
+  model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv", y_train);
+
+  torch::Tensor y_pred = model->fit(x_train, y_train);
+
+  return true;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -73,44 +105,19 @@ int main(int argc, char** argv) {
 
   if (argc != 2) {
     std::cout << "Missing Stock Symbol...reading top 100 BSE stocks\n";
+    const std::string bse100File = NetworkConstants::kRootFolder + "BSE100.csv";
+    std::string companyName;
+    io::CSVReader<2> in(bse100File);
+    in.read_header(io::ignore_extra_column, "Symbol", "Name");
 
-  } else {
-    stockSymbol = argv[1];
-  }
-
-  const std::string bse100File = NetworkConstants::kRootFolder + "BSE100.csv";
-     
-  MinMaxScaler<float> minmaxScaler;
-  std::string companyName;
-  io::CSVReader<2> in(bse100File);
-  in.read_header(io::ignore_extra_column, "Symbol", "Name");
-
-  while (argc >= 1 && in.read_row(stockSymbol, companyName)) {
-    StockPrices stockData(stockSymbol, NetworkConstants::kPrevSamples,
-                          minmaxScaler);
-    
-    if (stockData.loadTimeSeries()) {
-        std::cout << stockSymbol << ":" << companyName << " has one or more bad entries\n";
-        continue;
+    while (argc >= 1 && in.read_row(stockSymbol, companyName)) {
+        if (!NetworkTrainerFacade(stockSymbol, companyName)) {
+            continue;
+        }
     }
-
-    stockData.normalizeData();
-    stockData.reshapeSeries(NetworkConstants::kSplitRatio);
-
-    auto trainData = stockData.getTrainData();
-
-    // Convert values to Pytorch Tensors
-    torch::Tensor x_train = torch::tensor(std::get<0>(trainData));
-    torch::Tensor y_train = torch::tensor(std::get<1>(trainData));
-    
-    // Record this stock for front end to update
-    updateConfig(NetworkConstants::kRootFolder + "stock_train.csv", stockSymbol, companyName);
-
-    std::shared_ptr<NetworkTrainer> model =
-        std::make_shared<StockNetworkTrainer>(stockSymbol, minmaxScaler, std::get<2>(trainData));
-
-    model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv", y_train);
-
-    torch::Tensor y_pred = model->fit(x_train, y_train);
+  } else {
+    (void)NetworkTrainerFacade(argv[1]);
   }
+
+  return 0;
 }

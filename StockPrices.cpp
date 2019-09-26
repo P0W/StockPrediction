@@ -109,10 +109,9 @@ bool StockData::wasBadEntry() const
     return m_hasError;
 }
 
-StockPrices::StockPrices(const std::string &stockSymbol, int64_t prevSamples,
+StockPrices::StockPrices(
                          MinMaxScaler<float> &scaler)
-    : stockSymbol(stockSymbol),
-      num_prev_samples{prevSamples},
+    : 
       scaler(scaler),
       stockClosePrices{},
       normalizedStockClosePrices{},
@@ -122,7 +121,7 @@ StockPrices::StockPrices(const std::string &stockSymbol, int64_t prevSamples,
 
 StockPrices::~StockPrices() {}
 
-bool StockPrices::loadTimeSeries() {
+bool StockPrices::loadTimeSeries(const std::string& stockSymbol) {
   int errorCode = downloadStockData(stockSymbol);
   if (errorCode != 0) {
       std::printf("Cannot load %s\n", stockSymbol.c_str());
@@ -176,7 +175,7 @@ bool StockPrices::loadTimeSeries() {
 
   return false;
 }
-void StockPrices::reshapeSeries(float testSplitRatio) {
+void StockPrices::reshapeSeries(float testSplitRatio, int64_t num_prev_samples) {
   int64_t test_size =
       static_cast<int64_t>(normalizedStockClosePrices.size() * testSplitRatio);
   int64_t trainSize = normalizedStockClosePrices.size() - test_size;

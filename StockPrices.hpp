@@ -39,21 +39,17 @@ class StockData {
 
 class StockPrices : public ITimeSeries {
  public:
-  explicit StockPrices(const std::string& stockSymbol, int64_t prevSamples,
-                       MinMaxScaler<float>& scaler);
+  explicit StockPrices(MinMaxScaler<float>& scaler);
   virtual ~StockPrices();
   StockPrices(const StockPrices&) = delete;
   StockPrices& operator=(const StockPrices&) = delete;
 
-  virtual bool loadTimeSeries() override;
-  virtual void reshapeSeries(float testSplitRatio) override;
+  virtual bool loadTimeSeries(const std::string& stockSymbol) override;
+  virtual void reshapeSeries(float testSplitRatio, int64_t num_prev_samples) override;
   virtual void normalizeData() override;
 
   std::tuple<std::vector<float>, std::vector<float>, std::vector<std::string>> getTrainData() const;
-
  private:
-  std::string stockSymbol;
-  int64_t num_prev_samples;
   MinMaxScaler<float>& scaler;
   std::vector<float> stockClosePrices;
   std::vector<float> normalizedStockClosePrices;
