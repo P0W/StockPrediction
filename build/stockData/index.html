@@ -1,178 +1,200 @@
 <html>
+<style>
+    /* set the CSS */
 
-<head>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-</head>
-<h1>This is a h1 header.</h1>
-<table>
-    <tr>
-        <td>
-            <canvas id="canvas_d3_raw" height="600px" width="1800px" style="margin: 30px; background-color:azure">
-            </canvas>
-        </td>
-        <td>
-            <canvas id="canvas_d3_cleared" height="600px" width="800px" style="margin: 30px; background-color:azure">
-            </canvas>
-        </td>
-    </tr>
-</table>
-
-<script>
-    var xRange, yRange;
-    var dataSet;
-
-    var line = d3.line()
-        .x(function (d) {
-            return convertRawToPixel(d.x, 'x');
-        })
-        .y(function (d) {
-            return convertRawToPixel(d.y, 'y');
-        })
-        .curve(d3.curveLinear)
-
-    function convertRawToPixel(rawValue, type) {
-        var pixelValue = 0;
-        if (type === "x") {
-            var xMin = xRange[0];
-            var xMax = xRange[1];
-
-            var axesWidth = 1500;
-            pixelValue = Math.round(((rawValue - xMin) / (xMax - xMin)) * axesWidth);
-        } else if (type === "y") {
-            var yMin = yRange[0];
-            var yMax = yRange[1];
-            var axesHeight = 500;
-            pixelValue = axesHeight - Math.round(((rawValue - yMin) / (yMax - yMin)) * axesHeight);
-        }
-        return pixelValue;
-    };
-
-    function drawd3Curve(data, canvasID, color) {
-        var canvas = d3.select('#' + canvasID);
-        var context = canvas.node().getContext('2d');
-        line.context(context);
-        context.beginPath();
-
-        line(data);
-        context.lineWidth = 1;
-        context.strokeStyle = color;
-        context.stroke();
+    .axis {
+        font: 9px sans-serif;
     }
 
+    .line {
+        fill: none;
+        stroke: red;
+        stroke-width: 1px;
+    }
+</style>
+
+<body>
+
+    <h1>This is a h1 header.</h1>
+
+    <head>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="chart.js"></script>
+    </head>
+
+    <table>
+        <tr>
+            <td>
+                <canvas id="canvas_d3_raw" height="600px" width="1800px" style="margin: 30px; background-color:azure">
+                </canvas>
+            </td>
+            <td>
+                <canvas id="canvas_d3_cleared" height="600px" width="800px"
+                    style="margin: 30px; background-color:azure">
+                </canvas>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        var xRange, yRange;
+        var dataSet;
+
+        var line = d3.line()
+            .x(function (d) {
+                return convertRawToPixel(d.x, 'x');
+            })
+            .y(function (d) {
+                return convertRawToPixel(d.y, 'y');
+            })
+            .curve(d3.curveLinear)
+
+        function convertRawToPixel(rawValue, type) {
+            var pixelValue = 0;
+            if (type === "x") {
+                var xMin = xRange[0];
+                var xMax = xRange[1];
+
+                var axesWidth = 1500;
+                pixelValue = Math.round(((rawValue - xMin) / (xMax - xMin)) * axesWidth);
+            } else if (type === "y") {
+                var yMin = yRange[0];
+                var yMax = yRange[1];
+                var axesHeight = 500;
+                pixelValue = axesHeight - Math.round(((rawValue - yMin) / (yMax - yMin)) * axesHeight);
+            }
+            return pixelValue;
+        };
+
+        function drawd3Curve(data, canvasID, color) {
+            var canvas = d3.select('#' + canvasID);
+            var context = canvas.node().getContext('2d');
+            line.context(context);
+            context.beginPath();
+
+            line(data);
+            context.lineWidth = 1;
+            context.strokeStyle = color;
+            context.stroke();
+        }
 
 
-    function drawClockwise(points, canvasID, color) {
 
-        var startX = -Infinity;
-        var isLinearlyIncreasing = points.every(point => {
-            if (point.x > startX) {
-                startX = point.x;
-                return true;
-            } else {
-                return false;
+        function drawClockwise(points, canvasID, color) {
+
+            var startX = -Infinity;
+            var isLinearlyIncreasing = points.every(point => {
+                if (point.x > startX) {
+                    startX = point.x;
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+            if (!isLinearlyIncreasing) {
+                // Find min max to get center
+                // Sort from top to bottom
+
+                points.sort((a, b) => a.y - b.y);
+
+                // Get center y
+                const cy = (points[0].y + points[points.length - 1].y) / 2;
+
+                // Sort from right to left
+                points.sort((a, b) => b.x - a.x);
+
+                // Get center x
+                const cx = (points[0].x + points[points.length - 1].x) / 2;
+
+                // Center point
+                const center = { x: cx, y: cy };
+
+                // Pre calculate the angles as it will be slow in the sort
+                // As the points are sorted from right to left the first point
+                // is the rightmost
+
+                // Starting angle used to reference other angles
+                var startAng;
+                points.forEach(point => {
+                    var ang = Math.atan2(point.y - center.y, point.x - center.x);
+                    if (!startAng) { startAng = ang }
+                    else {
+                        if (ang < startAng) {  // ensure that all points are clockwise of the start point
+                            ang += Math.PI * 2;
+                        }
+                    }
+                    point.angle = ang; // add the angle to the point
+                });
+
+
+                // first sort clockwise
+                points.sort((a, b) => a.angle - b.angle);
+
+                // then reverse the order
+                const ccwPoints = points.reverse();
+
+                ccwPoints.unshift(ccwPoints.pop());
+
+                drawd3Curve(ccwPoints, canvasID, color);
+            }
+            else {
+                drawd3Curve(points, canvasID, color);
+            }
+        }
+
+        function drawCurve(fileName, canvasID, color, curveFunc) {
+            d3.csv(fileName, function (d) {
+                return {
+                    'date': d.date,
+                    'price': +d.price
+                };
+
+            }, function (error, data) {
+                var dataSet = [];
+
+                data.forEach((val, index) => {
+                    dataSet.push({
+                        x: index, //val.date,
+                        y: val.price
+                    });
+                });
+
+                // Add the dataset, and constrain to the clipping container
+                xRange = [0, data.length];
+
+                yRange = this.d3.extent(data, function (d) {
+                    return d.price;
+                });
+
+                console.log('Length = ' + data[0]);
+                curveFunc(dataSet, canvasID, color);
+            });
+        }
+
+
+        var currentSymbol = null, currentCompany = null;
+
+        d3.csv('stock_train.csv', function (d) {
+            return {
+                'symbol': d.Symbol,
+                'company': d.Company
+            }
+        }, function (error, data) {
+            currentSymbol = data[data.length - 1].symbol;
+            currentCompany = data[data.length - 1].company;
+
+            if (currentSymbol !== null) {
+                var h1 = d3.select('h1');
+                h1.text(currentCompany);
+                drawCurve(currentSymbol + '_train.csv', 'canvas_d3_raw', 'blue', drawd3Curve);
+                drawCurve(currentSymbol + '_pred.csv', 'canvas_d3_raw', 'red', drawd3Curve);
+
+                plotStockPrice(currentSymbol + '_pred.csv');
             }
         });
-        if (!isLinearlyIncreasing) {
-            // Find min max to get center
-            // Sort from top to bottom
-
-            points.sort((a, b) => a.y - b.y);
-
-            // Get center y
-            const cy = (points[0].y + points[points.length - 1].y) / 2;
-
-            // Sort from right to left
-            points.sort((a, b) => b.x - a.x);
-
-            // Get center x
-            const cx = (points[0].x + points[points.length - 1].x) / 2;
-
-            // Center point
-            const center = { x: cx, y: cy };
-
-            // Pre calculate the angles as it will be slow in the sort
-            // As the points are sorted from right to left the first point
-            // is the rightmost
-
-            // Starting angle used to reference other angles
-            var startAng;
-            points.forEach(point => {
-                var ang = Math.atan2(point.y - center.y, point.x - center.x);
-                if (!startAng) { startAng = ang }
-                else {
-                    if (ang < startAng) {  // ensure that all points are clockwise of the start point
-                        ang += Math.PI * 2;
-                    }
-                }
-                point.angle = ang; // add the angle to the point
-            });
 
 
-            // first sort clockwise
-            points.sort((a, b) => a.angle - b.angle);
-
-            // then reverse the order
-            const ccwPoints = points.reverse();
-
-            ccwPoints.unshift(ccwPoints.pop());
-
-            drawd3Curve(ccwPoints, canvasID, color);
-        }
-        else {
-            drawd3Curve(points, canvasID, color);
-        }
-    }
-
-    function drawCurve(fileName, canvasID, color, curveFunc) {
-        d3.csv(fileName, function (d) {
-            return {
-                'date': d.date,
-                'price': parseFloat(d.price)
-            };
-
-        }, function (error, data) {
-            var dataSet = [];
-
-            data.forEach((val, index) => {
-                dataSet.push({
-                    x: index, //val.date,
-                    y: val.price
-                });
-            });
-
-            // Add the dataset, and constrain to the clipping container
-            xRange = [0, data.length];
-
-            yRange = this.d3.extent(data, function (d) {
-                return d.price;
-            });
-
-            console.log('Length = ' + data[0]);
-            curveFunc(dataSet, canvasID, color);
-        });
-    }
-
-
-    var currentSymbol = null, currentCompany = null;
-
-    d3.csv('stock_train.csv', function (d) {
-        return {
-            'symbol': d.Symbol,
-            'company': d.Company
-        }
-    }, function (error, data) {
-        currentSymbol = data[data.length - 1].symbol;
-        currentCompany = data[data.length - 1].company;
-
-        if (currentSymbol !== null) {
-          var h1 = d3.select('h1');
-          h1.text(currentCompany);
-            drawCurve(currentSymbol + '_train.csv', 'canvas_d3_raw', 'blue', drawd3Curve);
-            drawCurve(currentSymbol + '_pred.csv', 'canvas_d3_raw', 'red', drawd3Curve);
-        }
-    });
-
-
-</script>
+    </script>
+</body>
 
 </html>
