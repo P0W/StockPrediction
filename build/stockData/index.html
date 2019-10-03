@@ -1,21 +1,18 @@
 <html>
 <style>
     /* set the CSS */
-
     .axis {
         font: 9px sans-serif;
     }
 
     .line {
         fill: none;
-        stroke: red;
         stroke-width: 1px;
     }
 </style>
 
 <body>
-
-    <h1>This is a h1 header.</h1>
+    <h1></h1>
 
     <head>
         <script src="https://d3js.org/d3.v4.min.js"></script>
@@ -25,12 +22,7 @@
     <table>
         <tr>
             <td>
-                <canvas id="canvas_d3_raw" height="600px" width="1800px" style="margin: 30px; background-color:azure">
-                </canvas>
-            </td>
-            <td>
-                <canvas id="canvas_d3_cleared" height="600px" width="800px"
-                    style="margin: 30px; background-color:azure">
+                <canvas id="canvas_d3_raw" height="600px" width="1500px" style="margin: 30px; background-color:azure">
                 </canvas>
             </td>
         </tr>
@@ -60,7 +52,7 @@
             } else if (type === "y") {
                 var yMin = yRange[0];
                 var yMax = yRange[1];
-                var axesHeight = 500;
+                var axesHeight = 600;
                 pixelValue = axesHeight - Math.round(((rawValue - yMin) / (yMax - yMin)) * axesHeight);
             }
             return pixelValue;
@@ -97,9 +89,9 @@
                 // Add the dataset, and constrain to the clipping container
                 xRange = [0, data.length];
 
-                yRange = this.d3.extent(data, function (d) {
+                yRange = [0.0, this.d3.max(data, function (d) {
                     return d.price;
-                });
+                })];
 
                 console.log('Length = ' + data[0]);
                 curveFunc(dataSet, canvasID, color);
@@ -121,10 +113,10 @@
             if (currentSymbol !== null) {
                 var h1 = d3.select('h1');
                 h1.text(currentCompany);
-                drawCurve(currentSymbol + '_train.csv', 'canvas_d3_raw', 'blue', drawd3Curve);
-                drawCurve(currentSymbol + '_pred.csv', 'canvas_d3_raw', 'red', drawd3Curve);
-
-                plotStockPrice(currentSymbol + '_pred.csv');
+                //drawCurve(currentSymbol + '_train.csv', 'canvas_d3_raw', 'blue', drawd3Curve);
+                //drawCurve(currentSymbol + '_pred.csv', 'canvas_d3_raw', 'red', drawd3Curve);
+                plotStockPrice(currentSymbol + '_train.csv');
+                plotStockPrice(currentSymbol + '_pred.csv', true);
             }
         });
 
