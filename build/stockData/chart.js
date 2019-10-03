@@ -74,8 +74,8 @@ function plotStockPrice(csvName, isPredicted) {
         } else {
             // Add the valueline for Actual Stock prices path.
             y.domain([0.0, d3.max(data, function (d) { return d.price; })]);
-            setUpPlot(data);
             x.domain([1.0, data.length]);
+            setUpPlot(data);
 
             svg.append("path")
                 .data([data])
