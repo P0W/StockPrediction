@@ -187,6 +187,11 @@ void StockPrices::reshapeSeries(float testSplitRatio, int64_t num_prev_samples) 
 
     y_train.push_back(normalizedStockClosePrices[idx]);
   }
+
+  // Adjust dates, strip off first num_prev_samples
+  dates.erase(
+      std::begin(dates),
+      std::begin(dates) + num_prev_samples);
 }
 
 void StockPrices::normalizeData() {
