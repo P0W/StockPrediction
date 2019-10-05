@@ -11,19 +11,18 @@
 #include <algorithm>
 #include <vector>
 
-template <typename T>
-class MinMaxScaler {
- public:
+template <typename T> class MinMaxScaler {
+public:
   MinMaxScaler();
   ~MinMaxScaler();
-  MinMaxScaler(const MinMaxScaler&) = delete;
-  MinMaxScaler& operator=(const MinMaxScaler&) = delete;
+  MinMaxScaler(const MinMaxScaler &) = delete;
+  MinMaxScaler &operator=(const MinMaxScaler &) = delete;
 
-  std::vector<T> fit_transform(const std::vector<T>& rawData);
-  std::vector<T> inverse(const std::vector<T>& normalizedData) const;
-  T operator()(const T& normalizedVal) const;
+  std::vector<T> fit_transform(const std::vector<T> &rawData);
+  std::vector<T> inverse(const std::vector<T> &normalizedData) const;
+  T operator()(const T &normalizedVal) const;
 
- private:
+private:
   T m_minVal;
   T m_maxVal;
 };
@@ -31,11 +30,10 @@ class MinMaxScaler {
 template <typename T>
 MinMaxScaler<T>::MinMaxScaler() : m_minVal(), m_maxVal() {}
 
-template <typename T>
-MinMaxScaler<T>::~MinMaxScaler() {}
+template <typename T> MinMaxScaler<T>::~MinMaxScaler() {}
 
 template <typename T>
-std::vector<T> MinMaxScaler<T>::fit_transform(const std::vector<T>& rawData) {
+std::vector<T> MinMaxScaler<T>::fit_transform(const std::vector<T> &rawData) {
   std::vector<T> result;
 
   auto minMax = std::minmax_element(std::begin(rawData), std::end(rawData));
@@ -48,7 +46,7 @@ std::vector<T> MinMaxScaler<T>::fit_transform(const std::vector<T>& rawData) {
   result.reserve(rawData.size());
   std::transform(std::begin(rawData), std::end(rawData),
                  std::back_inserter(result),
-                 [min, denominator](const float& price) {
+                 [min, denominator](const float &price) {
                    return (price - min) / denominator;
                  });
 
@@ -56,8 +54,8 @@ std::vector<T> MinMaxScaler<T>::fit_transform(const std::vector<T>& rawData) {
 }
 
 template <typename T>
-std::vector<T> MinMaxScaler<T>::inverse(
-    const std::vector<T>& normalizedData) const {
+std::vector<T>
+MinMaxScaler<T>::inverse(const std::vector<T> &normalizedData) const {
   std::vector<T> result;
 
   const T denominator = m_maxVal - m_minVal;
@@ -65,7 +63,7 @@ std::vector<T> MinMaxScaler<T>::inverse(
   result.reserve(normalizedData.size());
   std::transform(std::begin(normalizedData), std::end(normalizedData),
                  std::back_inserter(result),
-                 [denominator, minVal](const float& price) {
+                 [denominator, minVal](const float &price) {
                    return (price * denominator) + minVal;
                  });
 
@@ -73,7 +71,7 @@ std::vector<T> MinMaxScaler<T>::inverse(
 }
 
 template <typename T>
-T MinMaxScaler<T>::operator()(const T& normalizedVal) const {
+T MinMaxScaler<T>::operator()(const T &normalizedVal) const {
   const T denominator = m_maxVal - m_minVal;
   return (normalizedVal * denominator) + m_minVal;
 }

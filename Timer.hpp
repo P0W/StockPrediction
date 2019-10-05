@@ -12,18 +12,18 @@
 #include <string>
 
 class Timer {
- public:
-  Timer(const char* fmtString);
+public:
+  Timer(const char *fmtString);
   virtual ~Timer();
 
   void show(bool resetStartTime = true);
   operator double();
 
- private:
+private:
   std::chrono::steady_clock::time_point startTime;
   std::chrono::steady_clock::time_point endTime;
 
-  const char* fmtString;
+  const char *fmtString;
 };
 
 #endif /* TIMER_HPP_ */

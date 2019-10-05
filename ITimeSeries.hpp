@@ -9,11 +9,11 @@
 #define ITIMESERIES_HPP_
 
 class ITimeSeries {
- public:
+public:
   virtual ~ITimeSeries() {}
-  virtual bool loadTimeSeries(const std::string& ) = 0;
+  virtual bool loadTimeSeries(const std::string &) = 0;
   virtual void normalizeData() = 0;
-  virtual void reshapeSeries(float testSplitRatio, int64_t ) = 0;
+  virtual void reshapeSeries(float testSplitRatio, int64_t) = 0;
 };
 
 #endif /* ITIMESERIES_HPP_ */

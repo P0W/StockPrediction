@@ -13,11 +13,11 @@
 // Define a new Module.
 struct NaiveLSTM : public torch::nn::Module {
   NaiveLSTM(int input_sz, int hidden_sz);
-  torch::Tensor forward(const torch::Tensor& x);
+  torch::Tensor forward(const torch::Tensor &x);
 
   enum Dim : int64_t { batch = 0, seq = 1, feature = 2 };
 
- private:
+private:
   int input_sz;
   int hidden_sz;
 
@@ -39,12 +39,12 @@ struct NaiveLSTM : public torch::nn::Module {
 };
 
 class OptimizedLSTM : public torch::nn::Module {
- public:
+public:
   OptimizedLSTM(int64_t input_sz, int64_t hidden_sz);
   ~OptimizedLSTM();
-  torch::Tensor forward(const torch::Tensor& input);
+  torch::Tensor forward(const torch::Tensor &input);
 
- private:
+private:
   int64_t m_inputSize;
   int64_t m_hiddenSize;
   torch::Tensor m_weight_ih;
@@ -53,18 +53,18 @@ class OptimizedLSTM : public torch::nn::Module {
 };
 
 class StockLSTM : public torch::nn::Module {
- public:
-  StockLSTM(const torch::nn::LSTMOptions& lstmOpts1,
-            const torch::nn::LSTMOptions& lstmOpts2,
-            const torch::nn::LinearOptions& linearOpts);
+public:
+  StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
+            const torch::nn::LSTMOptions &lstmOpts2,
+            const torch::nn::LinearOptions &linearOpts);
   ~StockLSTM();
 
-  torch::Tensor forward(const torch::Tensor& x);
+  torch::Tensor forward(const torch::Tensor &x);
 
- private:
+private:
   torch::nn::LSTM lstm1;
   torch::nn::LSTM lstm2;
   torch::nn::Linear linear;
 };
 
-#endif  // !STOCK_LSTM_HPP_
+#endif // !STOCK_LSTM_HPP_

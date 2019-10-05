@@ -6,51 +6,43 @@
  */
 
 #include "NetworkTrainer.hpp"
-#include <iostream>
 #include "NetworkConstants.hpp"
 #include "Timer.hpp"
+#include <iostream>
 
 #include <fstream>
 
-
 namespace {
-    void logFullyTrainedModel(const std::string& modelName,
-        const std::string& companyName,
-        double lossVal, int64_t epoch, double time) {
-        const std::string fileName = NetworkConstants::kRootFolder + "fullTrained.csv";
-        std::ifstream checkHandle(fileName);
-        bool fileExits = checkHandle.good();
-        checkHandle.close();
-        std::ofstream fileHandle(fileName, std::ios::app);
-        if (fileHandle.good()) {
-            if (!fileExits) {
-                fileHandle << "Symbol,Company,Loss,Epochs,Duration\n";
-            }
-            fileHandle 
-		<< modelName << "," 
-		<< companyName << "," 
-		<< lossVal << "," 
-		<< epoch << "," 
-		<< time << '\n';
-        }
-        fileHandle.close();
+void logFullyTrainedModel(const std::string &modelName,
+                          const std::string &companyName, double lossVal,
+                          int64_t epoch, double time) {
+  const std::string fileName =
+      NetworkConstants::kRootFolder + "fullTrained.csv";
+  std::ifstream checkHandle(fileName);
+  bool fileExits = checkHandle.good();
+  checkHandle.close();
+  std::ofstream fileHandle(fileName, std::ios::app);
+  if (fileHandle.good()) {
+    if (!fileExits) {
+      fileHandle << "Symbol,Company,Loss,Epochs,Duration\n";
     }
+    fileHandle << modelName << "," << companyName << "," << lossVal << ","
+               << epoch << "," << time << '\n';
+  }
+  fileHandle.close();
 }
+} // namespace
 
 NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
                                int64_t numLayers, int64_t prevSamples,
                                double learningRate, int64_t maxEpochs,
-                               const std::string& modelName,
-                               const std::string& companyName)
+                               const std::string &modelName,
+                               const std::string &companyName)
     :
 
-      gpuAvailable(torch::cuda::is_available()),
-      maxEpochs(maxEpochs),
-      prevSamples(prevSamples),
-      modelName(modelName),
-      companyName(companyName),
-      lstmNetwork(nullptr),
-      optimizer(nullptr)
+      gpuAvailable(torch::cuda::is_available()), maxEpochs(maxEpochs),
+      prevSamples(prevSamples), modelName(modelName), companyName(companyName),
+      lstmNetwork(nullptr), optimizer(nullptr)
 
 {
   torch::nn::LSTMOptions lstmOpts1(input, hidden);
@@ -78,18 +70,16 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
 
 NetworkTrainer::~NetworkTrainer() {}
 
-torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
-                                  const torch::Tensor& y_train) {
+torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
+                                  const torch::Tensor &y_train) {
   torch::Tensor y_pred, input, target;
   torch::Tensor loss;
   input = x_train.view({prevSamples, -1, 1});
 
-
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
     target = y_train.to(torch::kCUDA);
-  }
-  else {
+  } else {
     target = y_train;
   }
 
@@ -156,10 +146,10 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
   return y_pred;
 }
 
-void NetworkTrainer::saveModel(const std::string& fileName) const {
+void NetworkTrainer::saveModel(const std::string &fileName) const {
   torch::save(lstmNetwork, fileName);
 }
 
-void NetworkTrainer::loadModel(const std::string& fileName) {
+void NetworkTrainer::loadModel(const std::string &fileName) {
   torch::load(lstmNetwork, fileName);
 }

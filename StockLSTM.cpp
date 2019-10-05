@@ -26,8 +26,8 @@ NaiveLSTM::NaiveLSTM(int input_sz, int hidden_sz)
   b_o = register_parameter("b_o", torch::randn(hidden_sz));
 }
 
-torch::Tensor NaiveLSTM::forward(const torch::Tensor& x) {
-  const auto& seq_sz = x.size(1);
+torch::Tensor NaiveLSTM::forward(const torch::Tensor &x) {
+  const auto &seq_sz = x.size(1);
   std::vector<torch::Tensor> hidden_seq;
 
   auto h_t = torch::zeros(this->hidden_sz).to(x.device());
@@ -67,9 +67,7 @@ torch::Tensor NaiveLSTM::forward(const torch::Tensor& x) {
 }
 
 OptimizedLSTM::OptimizedLSTM(int64_t input_sz, int64_t hidden_sz)
-    : Module(),
-      m_inputSize(input_sz),
-      m_hiddenSize(hidden_sz),
+    : Module(), m_inputSize(input_sz), m_hiddenSize(hidden_sz),
       m_weight_ih(register_parameter("m_weight_ih",
                                      torch::randn({input_sz, hidden_sz * 4}))),
       m_weight_hh(register_parameter("m_weight_hh",
@@ -78,7 +76,7 @@ OptimizedLSTM::OptimizedLSTM(int64_t input_sz, int64_t hidden_sz)
 
 OptimizedLSTM::~OptimizedLSTM() {}
 
-torch::Tensor OptimizedLSTM::forward(const torch::Tensor& input) {
+torch::Tensor OptimizedLSTM::forward(const torch::Tensor &input) {
   std::vector<torch::Tensor> hidden_seq;
 
   torch::Tensor h_t, c_t, i_t, f_t, g_t, o_t;
@@ -101,12 +99,12 @@ torch::Tensor OptimizedLSTM::forward(const torch::Tensor& input) {
 
     std::cout << "gates.sizes()       =" << gates.sizes() << std::endl;
 
-    i_t = torch::sigmoid(gates.slice(1, 0, this->m_hiddenSize));  // input
+    i_t = torch::sigmoid(gates.slice(1, 0, this->m_hiddenSize)); // input
     f_t = torch::sigmoid(gates.slice(1, this->m_hiddenSize,
-                                     this->m_hiddenSize * 2));  // # forget
+                                     this->m_hiddenSize * 2)); // # forget
     g_t = torch::tanh(
         gates.slice(1, this->m_hiddenSize * 2, this->m_hiddenSize * 3));
-    o_t = torch::sigmoid(gates.slice(1, this->m_hiddenSize * 3));  // output
+    o_t = torch::sigmoid(gates.slice(1, this->m_hiddenSize * 3)); // output
 
     c_t = f_t * c_t + i_t * g_t;
     h_t = o_t * torch::tanh(c_t);
@@ -122,9 +120,9 @@ torch::Tensor OptimizedLSTM::forward(const torch::Tensor& input) {
   return hidden_seq_tensor.transpose(0, 1).contiguous();
 }
 
-StockLSTM::StockLSTM(const torch::nn::LSTMOptions& lstmOpts1,
-                     const torch::nn::LSTMOptions& lstmOpts2,
-                     const torch::nn::LinearOptions& linearOpts)
+StockLSTM::StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
+                     const torch::nn::LSTMOptions &lstmOpts2,
+                     const torch::nn::LinearOptions &linearOpts)
     : torch::nn::Module(),
       lstm1(register_module("lstm1", torch::nn::LSTM(lstmOpts1))),
       lstm2(register_module("lstm2", torch::nn::LSTM(lstmOpts2))),
@@ -132,7 +130,7 @@ StockLSTM::StockLSTM(const torch::nn::LSTMOptions& lstmOpts1,
 
 StockLSTM::~StockLSTM() {}
 
-torch::Tensor StockLSTM::forward(const torch::Tensor& input) {
+torch::Tensor StockLSTM::forward(const torch::Tensor &input) {
   torch::nn::RNNOutput lstm_out = this->lstm1->forward(input);
 
   // std::cout << lstm_out.output.sizes() << '\n';  //[5, 3616, 64]
