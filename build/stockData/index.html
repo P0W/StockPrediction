@@ -1,41 +1,36 @@
 <html>
+
 <body>
-    <h1></h1>
+   <h1></h1>
 
-    <head>
-        <script src="https://d3js.org/d3.v4.js"></script>
-        <!-- <script src="chart.js"></script> -->
-        <script src="d3Chart.js"></script>
-        <link rel="stylesheet" type="text/css" href="stock.css">
+   <head>
+      <script src="https://d3js.org/d3.v4.js"></script>
+      <script src="d3Chart.js"></script>
+      <link rel="stylesheet" type="text/css" href="stock.css">
 
-        <div>
-           <button class ="resetButton"> Reset</button>
-        </div>
-    </head>
-    <script>
-        var currentSymbol = null, currentCompany = null;
+      <div>
+         <button class="resetButton"> Reset</button>
+      </div>
+   </head>
+   <script>
+      var currentSymbol = null, currentCompany = null;
+      d3.csv('stock_train.csv', function (d) {
+         return {
+            'symbol': d.Symbol,
+            'company': d.Company
+         }
+      }, function (error, data) {
+         currentSymbol = data[data.length - 1].symbol;
+         currentCompany = data[data.length - 1].company;
 
-        d3.csv('stock_train.csv', function (d) {
-            return {
-                'symbol': d.Symbol,
-                'company': d.Company
-            }
-        }, function (error, data) {
-            currentSymbol = data[data.length - 1].symbol;
-            currentCompany = data[data.length - 1].company;
-
-            if (currentSymbol !== null) {
-                var h1 = d3.select('h1');
-                h1.text(currentCompany);
-                //drawCurve(currentSymbol + '_train.csv', 'canvas_d3_raw', 'blue', drawd3Curve);
-                //drawCurve(currentSymbol + '_pred.csv', 'canvas_d3_raw', 'red', drawd3Curve);
-                plotStockPrice(currentSymbol + '_train.csv');
-                plotStockPrice(currentSymbol + '_pred.csv', true);
-            }
-        });
-
-
-    </script>
+         if (currentSymbol !== null) {
+            d3.select('h1')
+            .text(currentCompany);
+            plotStockPrice(currentSymbol + '_train.csv');
+            plotStockPrice(currentSymbol + '_pred.csv', true);
+         }
+      });
+   </script>
 </body>
 
 </html>
