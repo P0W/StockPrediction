@@ -1,104 +1,18 @@
 <html>
-<style>
-    /* set the CSS */
-    .axis {
-        font: 9px sans-serif;
-    }
-
-    .line {
-        fill: none;
-        stroke-width: 1px;
-    }
-</style>
-
 <body>
     <h1></h1>
 
     <head>
-        <script src="https://d3js.org/d3.v4.min.js"></script>
-        <script src="chart.js"></script>
+        <script src="https://d3js.org/d3.v4.js"></script>
+        <!-- <script src="chart.js"></script> -->
+        <script src="d3Chart.js"></script>
+        <link rel="stylesheet" type="text/css" href="stock.css">
+
+        <div>
+           <button class ="resetButton"> Reset</button>
+        </div>
     </head>
-
-    <table>
-        <tr>
-            <td>
-                <canvas id="canvas_d3_raw" height="600px" width="1500px" style="margin: 30px; background-color:azure">
-                </canvas>
-            </td>
-        </tr>
-    </table>
-
     <script>
-        var xRange, yRange;
-        var dataSet;
-
-        var line = d3.line()
-            .x(function (d) {
-                return convertRawToPixel(d.x, 'x');
-            })
-            .y(function (d) {
-                return convertRawToPixel(d.y, 'y');
-            })
-            .curve(d3.curveLinear)
-
-        function convertRawToPixel(rawValue, type) {
-            var pixelValue = 0;
-            if (type === "x") {
-                var xMin = xRange[0];
-                var xMax = xRange[1];
-
-                var axesWidth = 1500;
-                pixelValue = Math.round(((rawValue - xMin) / (xMax - xMin)) * axesWidth);
-            } else if (type === "y") {
-                var yMin = yRange[0];
-                var yMax = yRange[1];
-                var axesHeight = 600;
-                pixelValue = axesHeight - Math.round(((rawValue - yMin) / (yMax - yMin)) * axesHeight);
-            }
-            return pixelValue;
-        };
-
-        function drawd3Curve(data, canvasID, color) {
-            var canvas = d3.select('#' + canvasID);
-            var context = canvas.node().getContext('2d');
-            line.context(context);
-            context.beginPath();
-
-            line(data);
-            context.lineWidth = 1;
-            context.strokeStyle = color;
-            context.stroke();
-        }
-        function drawCurve(fileName, canvasID, color, curveFunc) {
-            d3.csv(fileName, function (d) {
-                return {
-                    'date': d.date,
-                    'price': +d.price
-                };
-
-            }, function (error, data) {
-                var dataSet = [];
-
-                data.forEach((val, index) => {
-                    dataSet.push({
-                        x: index, //val.date,
-                        y: val.price
-                    });
-                });
-
-                // Add the dataset, and constrain to the clipping container
-                xRange = [0, data.length];
-
-                yRange = [0.0, this.d3.max(data, function (d) {
-                    return d.price;
-                })];
-
-                console.log('Length = ' + data[0]);
-                curveFunc(dataSet, canvasID, color);
-            });
-        }
-
-
         var currentSymbol = null, currentCompany = null;
 
         d3.csv('stock_train.csv', function (d) {
