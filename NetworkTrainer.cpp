@@ -14,7 +14,9 @@
 
 
 namespace {
-    void logFullyTrainedModel(const std::string& modelName, double lossVal, int64_t epoch, double time) {
+    void logFullyTrainedModel(const std::string& modelName,
+        const std::string& companyName,
+        double lossVal, int64_t epoch, double time) {
         const std::string fileName = NetworkConstants::kRootFolder + "fullTrained.csv";
         std::ifstream checkHandle(fileName);
         bool fileExits = checkHandle.good();
@@ -22,9 +24,14 @@ namespace {
         std::ofstream fileHandle(fileName, std::ios::app);
         if (fileHandle.good()) {
             if (!fileExits) {
-                fileHandle << "Symbol,Loss,Epochs,Duration\n";
+                fileHandle << "Symbol,Company,Loss,Epochs,Duration\n";
             }
-            fileHandle << modelName << "," << lossVal << "," << epoch << "," << time << '\n';
+            fileHandle 
+		<< modelName << "," 
+		<< companyName << "," 
+		<< lossVal << "," 
+		<< epoch << "," 
+		<< time << '\n';
         }
         fileHandle.close();
     }
@@ -33,13 +40,15 @@ namespace {
 NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
                                int64_t numLayers, int64_t prevSamples,
                                double learningRate, int64_t maxEpochs,
-                               const std::string& modelName)
+                               const std::string& modelName,
+                               const std::string& companyName)
     :
 
       gpuAvailable(torch::cuda::is_available()),
       maxEpochs(maxEpochs),
       prevSamples(prevSamples),
       modelName(modelName),
+      companyName(companyName),
       lstmNetwork(nullptr),
       optimizer(nullptr)
 
@@ -129,7 +138,7 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor& x_train,
 
     else if (running_loss < NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
-      logFullyTrainedModel(modelName, running_loss, epoch, t2);
+      logFullyTrainedModel(modelName, companyName, running_loss, epoch, t2);
       dataWriter(predictLogFile, y_pred);
       return y_pred;
     }

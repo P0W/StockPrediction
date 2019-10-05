@@ -19,7 +19,8 @@ class NetworkTrainer {
   NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
                  int64_t numLayers, int64_t prevSamples, double learningRate,
                  int64_t maxEpochs,
-                 const std::string& modelName = "stockTempModel.pt");
+                 const std::string& modelName,
+                 const std::string& companyName);
   virtual ~NetworkTrainer();
 
   torch::Tensor fit(const torch::Tensor& x_train, const torch::Tensor& y_train);
@@ -34,6 +35,7 @@ class NetworkTrainer {
   int64_t maxEpochs;
   int64_t prevSamples;
   std::string modelName;
+  std::string companyName;
   std::shared_ptr<StockLSTM> lstmNetwork;
   std::shared_ptr<torch::optim::Optimizer> optimizer;
 };

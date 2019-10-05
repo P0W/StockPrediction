@@ -19,6 +19,7 @@ namespace {
 class StockNetworkTrainer : public NetworkTrainer {
  public:
   StockNetworkTrainer(const std::string& fileName,
+                      const std::string& companyName,
                       const MinMaxScaler<float>& minmaxScaler,
       const std::vector<std::string> allDates)
       : NetworkTrainer(
@@ -26,7 +27,8 @@ class StockNetworkTrainer : public NetworkTrainer {
             NetworkConstants::output_size, NetworkConstants::num_of_layers,
             NetworkConstants::kPrevSamples, NetworkConstants::kLearningRate,
             NetworkConstants::kMaxEpochs,
-            NetworkConstants::kRootFolder + fileName),
+            NetworkConstants::kRootFolder + fileName,
+            companyName),
       minMaxScaler{ minmaxScaler }, allDates{ allDates } {}
 
   virtual void dataWriter(const std::string& logFile, const torch::Tensor& tensorData) override {
@@ -90,7 +92,7 @@ bool NetworkTrainerFacade(
   updateConfig(NetworkConstants::kRootFolder + "stock_train.csv", stockSymbol, companyName);
 
   std::shared_ptr<NetworkTrainer> model =
-      std::make_shared<StockNetworkTrainer>(stockSymbol, minmaxScaler, std::get<2>(trainData));
+      std::make_shared<StockNetworkTrainer>(stockSymbol, companyName, minmaxScaler, std::get<2>(trainData));
 
   model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv", y_train);
 
