@@ -66,6 +66,19 @@ void updateConfig(const std::string &configFileName,
   fileHandle.close();
 }
 
+std::pair<std::string, std::string>
+getLastStock(const std::string &configFileName) {
+  std::string symbol, companyName;
+
+  std::cout << "Reading last trained stock from " << configFileName << '\n';
+  io::CSVReader<2> in(configFileName);
+  in.read_header(io::ignore_extra_column, "Symbol", "Company");
+  while (in.read_row(symbol, companyName))
+    ;
+
+  return std::make_pair(symbol, companyName);
+}
+
 bool NetworkTrainerFacade(const std::string &stockSymbol,
                           const std::string &companyName = "") {
 
@@ -104,18 +117,31 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
 } // namespace
 
 int main(int argc, char **argv) {
-  std::string stockSymbol;
 
   if (argc != 2) {
     std::cout << "Missing Stock Symbol...reading top 100 BSE stocks\n";
     const std::string bse100File = NetworkConstants::kRootFolder + "BSE100.csv";
+    std::string stockSymbol;
     std::string companyName;
+    auto lastUnderTrainStock =
+        getLastStock(NetworkConstants::kRootFolder + "stock_train.csv");
+
+    bool flag = false;
     io::CSVReader<2> in(bse100File);
     in.read_header(io::ignore_extra_column, "Symbol", "Name");
 
     while (argc >= 1 && in.read_row(stockSymbol, companyName)) {
-      if (!NetworkTrainerFacade(stockSymbol, companyName)) {
-        continue;
+      if (!lastUnderTrainStock.first.empty()) {
+        if (!flag && lastUnderTrainStock.first != stockSymbol) {
+          std::cout << "Already Trained " << companyName << "..Skipping\n";
+          continue;
+        } else {
+          if (!NetworkTrainerFacade(stockSymbol, companyName)) {
+
+            continue;
+          }
+          flag = true;
+        }
       }
     }
   } else {

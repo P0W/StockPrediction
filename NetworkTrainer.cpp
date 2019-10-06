@@ -83,7 +83,7 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
     target = y_train;
   }
 
-  float running_loss = 1;
+  float running_loss = 1, minimumLoss = 1;
   int64_t epoch = 0;
   input.set_requires_grad(true);
 
@@ -119,26 +119,29 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
     optimizer->step();
 
     running_loss = loss.item<float>();
-    if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
-      std::cout << "Loss is too high after epoch " << epoch << ": "
-                << running_loss << std::endl;
+
+    // Save model and write the predicted tensor
+    if (minimumLoss > running_loss) {
+      saveModel(neuralNetLogFile);
       dataWriter(predictLogFile, y_pred);
+      minimumLoss = running_loss;
+    }
+    if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
+      std::cout << "Cannot converge after epoch " << epoch << ": "
+                << minimumLoss << std::endl;
       return y_pred;
     }
 
     else if (running_loss < NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
       logFullyTrainedModel(modelName, companyName, running_loss, epoch, t2);
-      dataWriter(predictLogFile, y_pred);
       return y_pred;
     }
 
     else if (epoch % 10 == 0) {
       t2.show(false);
-      std::cout << " epoch " << epoch << " [Running Loss = " << running_loss
-                << " ( " << neuralNetLogFile << " ) ]\n";
-      saveModel(neuralNetLogFile);
-      dataWriter(predictLogFile, y_pred);
+      std::cout << " epoch " << epoch << " [Loss = " << running_loss << " ( "
+                << companyName << " ) ]\n";
     }
     epoch++;
   }
