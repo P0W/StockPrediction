@@ -39,8 +39,8 @@
 
 
 #StockSelect {
-display: block;
-margin-top: 2%;
+   display: block;
+   margin-top: 2%;
 }
 
 select {
@@ -61,7 +61,7 @@ select {
  }
 
 svg {
-   background-color: #000000;
+   background-color: black;
    border-radius: 15px;
    opacity: 0.85;
    margin-left:auto; 
@@ -73,4 +73,31 @@ svg {
    stroke:yellow;
    stroke-width:1.0;
    shape-rendering: crispEdges;
+}
+
+.cursor {
+   stroke:darkgreen;
+   shape-rendering: crispEdges;
+   stroke-width: 2.5px;
+   border-radius: 20px;
+   border-color: aqua;
+   fill: beige;
+}
+
+.tooltip {
+   position:absolute;
+   width:175px;
+   height:50px;
+   text-align: center;
+   background-color: lightgreen;
+   border-radius: 5px;
+   opacity: 0.65;
+   display:none;
+   pointer-events: none;
+}
+
+.marker {
+   fill: lightgreen;
+   opacity: 0.65;
+   pointer-events: none;
 }

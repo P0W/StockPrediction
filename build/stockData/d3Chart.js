@@ -40,6 +40,8 @@ var xScale = d3.axisBottom(x)
 var yAxis = svg.append("g")
    .attr("class", "axis")
 
+var yScale = d3.axisLeft(y);
+
 // Add a clipPath: everything out of this area won't be drawn.
 var clip = svg.append("defs").append("svg:clipPath")
    .attr("id", "clip")
@@ -54,7 +56,7 @@ var valueLine = d3.line()
    .y(function (d) { return y(d.value) });
 
 // A function that set idleTimeOut to null
-var idleTimeout, chartArea;
+var idleTimeout, chartArea, cursor;
 function idled() { idleTimeout = null; }
 
 
@@ -71,9 +73,7 @@ function zoomed() {
    svg.select(".predictedStock").attr("d", valueLine);
    svg.select(".axis--x").call(xScale);
 
-
    //svg.select(".brush").call(brush.move, x.range().map(t.invertX, t));
-
 }
 
 function resetted() {
@@ -130,17 +130,19 @@ function dbClickHandler(data) {
 
 
 function setUpChart(data) {
+   var bisectDate = d3.bisector(function (d) { return d.date; }).left;
+
    x.domain(d3.extent(data, function (d) { return d.date; }));
    x2.domain(x.domain());
    y.domain([0, d3.max(data, function (d) { return +d.value; })])
 
    xAxis.call(xScale);
-   yAxis.call(d3.axisLeft(y));
+   yAxis.call(yScale);
 
    // Add brushing
    // Add the brush feature using the d3.brush function
    // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
-   brush.on("end", updateChart)               // Each time the brush selection changes, trigger the 'updateChart' function
+   brush.on("end", updateChart);// Each time the brush selection changes, trigger the 'updateChart' function
 
 
    d3.select("button")
@@ -153,6 +155,58 @@ function setUpChart(data) {
       .attr("class", "brush")
       .call(brush)
       .call(zoom);
+
+   var x1 = x;
+   var data = data;
+
+   var marker = svg.append('circle')
+      .attr('class', 'marker');
+
+   cursor = chartArea.append('line')
+      .attr('class', 'cursor')
+      .style('display', 'none')
+      .attr('x1', margin.left)
+      .attr('y1', 0)
+      .attr('x2', margin.left)
+      .attr('y2', height);
+
+   chartArea.on('mousemove', function () {
+      var mouse = d3.mouse(this);
+      cursor.style('display', 'block');
+      var mouseDate = x1.invert(mouse[0]);
+      var i = bisectDate(data, mouseDate);
+      if (i <= 0) return;
+
+      var d0 = data[i - 1];
+      var d = d0;
+      var xPos = x1(d.date);
+      var yPos = y(d.value);
+      cursor
+         .attr('x1', xPos)
+         .attr('x2', xPos);
+
+      var svgPositon = d3.select('svg').node().getBoundingClientRect();
+      d3.select('.tooltip')
+         .text(d.value + ' on ' + d3.timeFormat('%Y-%b-%d')(d.date))
+         .style('display', 'block')
+         .style('left', xPos + svgPositon.x + 'px')
+         .style('top', yPos + 'px');
+
+      marker.attr('cx', xPos)
+         .attr('cy', yPos)
+         .attr('r', 3.5);
+
+   })
+      .on('mouseout', function () {
+         cursor.style('display', 'none');
+         d3.select('.tooltip').style('display', 'none');
+         marker.attr('r', 0.0);
+      })
+      .on('mouseover', function () {
+         cursor.style('display', null);
+         d3.select('.tooltip').style('display', 'null');
+         marker.attr('r', 0.0);
+      })
 
 }
 
