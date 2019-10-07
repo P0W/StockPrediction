@@ -1,10 +1,10 @@
 // set the dimensions and margins of the graph
 var margin = { top: 10, right: 30, bottom: 30, left: 60 },
-   width = 1090 - margin.left - margin.right,
+   width = 850 - margin.left - margin.right,
    height = 400 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
-var svg = d3.select("body")
+var svg = d3.select("#CharContainer")
    .append("svg")
    .attr("width", width + margin.left + margin.right)
    .attr("height", height + margin.top + margin.bottom)
@@ -54,13 +54,12 @@ var valueLine = d3.line()
    .y(function (d) { return y(d.value) });
 
 // A function that set idleTimeOut to null
-var idleTimeout;
+var idleTimeout, chartArea;
 function idled() { idleTimeout = null; }
 
 
-function clearGraph () {
+function clearGraph() {
    svg.selectAll("path").remove();
-
 }
 
 function zoomed() {
@@ -78,9 +77,10 @@ function zoomed() {
 }
 
 function resetted() {
-   svg.select(".brush").transition()
+   chartArea.transition()
       .duration(1000)
       .call(zoom.transform, d3.zoomIdentity);
+
 }
 
 
@@ -147,7 +147,7 @@ function setUpChart(data) {
       .on("click", resetted);
 
    // Create the line variable: where both the line and the brush take place
-   svg.append('g')
+   chartArea = svg.append('g')
       .attr("clip-path", "url(#clip)")
       .append("g")
       .attr("class", "brush")
