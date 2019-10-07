@@ -27,7 +27,7 @@ public:
             NetworkConstants::output_size, NetworkConstants::num_of_layers,
             NetworkConstants::kPrevSamples, NetworkConstants::kLearningRate,
             NetworkConstants::kMaxEpochs,
-            NetworkConstants::kRootFolder + fileName, companyName),
+            fileName, companyName),
         minMaxScaler{minmaxScaler}, allDates{allDates} {}
 
   virtual void dataWriter(const std::string &logFile,
@@ -137,7 +137,6 @@ int main(int argc, char **argv) {
           continue;
         } else {
           if (!NetworkTrainerFacade(stockSymbol, companyName)) {
-
             continue;
           }
           flag = true;
