@@ -58,6 +58,11 @@ var idleTimeout;
 function idled() { idleTimeout = null; }
 
 
+function clearGraph () {
+   svg.selectAll("path").remove();
+
+}
+
 function zoomed() {
    if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
    var t = d3.event.transform;

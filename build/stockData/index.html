@@ -8,28 +8,59 @@
       <script src="d3Chart.js"></script>
       <link rel="stylesheet" type="text/css" href="stock.css">
 
+      <div id="StockSelect"></div>
       <div>
          <button class="resetButton"> Reset</button>
       </div>
    </head>
    <script>
-      var currentSymbol = null, currentCompany = null;
-      d3.csv('stock_train.csv', function (d) {
+
+      // Populate Drown Down from Fully Trained Model
+      d3.csv('fullTrained.csv', function (d) {
          return {
             'symbol': d.Symbol,
-            'company': d.Company
-         }
+            'company': d.Company,
+            'loss': d.loss,
+            'epochs': d.Epochs,
+            'duration': d.Duration
+         };
       }, function (error, data) {
-         currentSymbol = data[data.length - 1].symbol;
-         currentCompany = data[data.length - 1].company;
 
-         if (currentSymbol !== null) {
-            d3.select('h1')
-            .text(currentCompany);
-            plotStockPrice(currentSymbol + '_train.csv');
-            plotStockPrice(currentSymbol + '_pred.csv', true);
-         }
+         data = data.filter((thing, index, self) =>
+            index === self.findIndex((t) => (
+               t.symbol === thing.symbol
+            ))
+         )
+         d3.select("#StockSelect")
+            .append("select")
+            .on('change', function () {
+               var o = this.options[this.selectedIndex];
+               d3.select('h1')
+                  .text(o.text);
+
+               updateGraph(o.value, o.text);
+            })
+            .selectAll("option").data(data)
+            .enter().append("option")
+            .text(function (d) {
+               return d.company;
+            })
+            .attr("value", function (d) {
+               return d.symbol.replace('stockData/', '');
+            });
+
+         // Initial Value
+         d3.select('select').property('value', 'BOM532540');
+         updateGraph('BOM532540', 'TATA CONSULTANCY SERVICES LTD.');
       });
+
+      function updateGraph(stockSymbol, company) {
+         d3.select('h1')
+            .text(company);
+         clearGraph();
+         plotStockPrice(stockSymbol + '_train.csv');
+         plotStockPrice(stockSymbol + '_pred.csv', true);
+      }
    </script>
 </body>
 
