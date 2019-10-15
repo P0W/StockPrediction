@@ -26,8 +26,7 @@ public:
             NetworkConstants::input_size, NetworkConstants::hidden_size,
             NetworkConstants::output_size, NetworkConstants::num_of_layers,
             NetworkConstants::kPrevSamples, NetworkConstants::kLearningRate,
-            NetworkConstants::kMaxEpochs,
-            fileName, companyName),
+            NetworkConstants::kMaxEpochs, fileName, companyName),
         minMaxScaler{minmaxScaler}, allDates{allDates} {}
 
   virtual void dataWriter(const std::string &logFile,
@@ -57,7 +56,7 @@ void updateConfig(const std::string &configFileName,
   bool isPresent = testFileHandle.good();
   testFileHandle.close();
 
-  std::ofstream fileHandle(configFileName, std::ios::app);
+  std::ofstream fileHandle(configFileName, std::ios::out | std::ios::app);
 
   if (!isPresent) {
     fileHandle << "Symbol,Company\n";
@@ -68,13 +67,16 @@ void updateConfig(const std::string &configFileName,
 
 std::pair<std::string, std::string>
 getLastStock(const std::string &configFileName) {
-  std::string symbol, companyName;
+  std::string symbol = "", companyName = "";
 
   std::cout << "Reading last trained stock from " << configFileName << '\n';
-  io::CSVReader<2> in(configFileName);
-  in.read_header(io::ignore_extra_column, "Symbol", "Company");
-  while (in.read_row(symbol, companyName))
-    ;
+  try {
+    io::CSVReader<2> in(configFileName);
+    in.read_header(io::ignore_extra_column, "Symbol", "Company");
+    while (in.read_row(symbol, companyName))
+      ;
+  } catch (...) {
+  }
 
   return std::make_pair(symbol, companyName);
 }
@@ -131,16 +133,16 @@ int main(int argc, char **argv) {
     in.read_header(io::ignore_extra_column, "Symbol", "Name");
 
     while (argc >= 1 && in.read_row(stockSymbol, companyName)) {
-      if (!lastUnderTrainStock.first.empty()) {
-        if (!flag && lastUnderTrainStock.first != stockSymbol) {
-          std::cout << "Already Trained " << companyName << "..Skipping\n";
+
+      if (!flag && !lastUnderTrainStock.first.empty() &&
+          lastUnderTrainStock.first != stockSymbol) {
+        std::cout << "Already Trained " << companyName << "..Skipping\n";
+        continue;
+      } else {
+        if (!NetworkTrainerFacade(stockSymbol, companyName)) {
           continue;
-        } else {
-          if (!NetworkTrainerFacade(stockSymbol, companyName)) {
-            continue;
-          }
-          flag = true;
         }
+        flag = true;
       }
     }
   } else {

@@ -90,8 +90,10 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
   Timer t1("Total Elapsed Time: %2.f\n");
   Timer t2("Epoch Time: %.2f ");
 
-  const std::string neuralNetLogFile = NetworkConstants::kRootFolder + modelName + ".pt";
-  const std::string predictLogFile = NetworkConstants::kRootFolder + modelName + "_pred.csv";
+  const std::string neuralNetLogFile =
+      NetworkConstants::kRootFolder + modelName + ".pt";
+  const std::string predictLogFile =
+      NetworkConstants::kRootFolder + modelName + "_pred.csv";
 
   if (!modelName.empty()) {
     try {

@@ -27,8 +27,8 @@ if(MSVC)
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   string(APPEND CMAKE_CXX_FLAGS_DEBUG " -g3")
   # Update if necessary
-  set(CUDNN_INCLUDE_DIR  "/home/powprashant/Downloads/cudnn-10.0-linux-x64-v7.6.2.24/cuda/include")
-  set(CUDNN_LIBRARY "/home/powprashant/Downloads/cudnn-10.0-linux-x64-v7.6.2.24/cuda/lib64/libcudnn.so")
+  set(CUDNN_INCLUDE_PATH  "/home/p0w/Downloads/cuda/include")
+  set(CUDNN_LIBRARY_PATH "/home/p0w/Downloads/cuda/lib64/libcudnn_static.a")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -Wextra -pedantic -Werror")
 endif()
 
