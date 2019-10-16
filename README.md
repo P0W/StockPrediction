@@ -4,11 +4,18 @@ _BITS Final Semester Project_
 1. Clone the repository
 
 2. Make sure following are installed:
+  
    a. cmake
-   b. pytorch
-   c. libcurl (for linux only)
+   
+   b. [Pytorch](https://pytorch.org/get-started/locally/)
+   
+   c. libcurl (for linux only, usually comes installed)
+   
+   d. [C++ Boost/Beast](https://github.com/boostorg/beast) Inspired by [this example](https://www.boost.org/doc/libs/develop/libs/beast/example/http/server/async/http_server_async.cpp). Requires date_time boost library.
+   
    d. Recommended:
-      NVIDIA CUDA 10.0 install for leveraging GPU acceleration if the graphics card suports it
+  
+      NVIDIA CUDA 10.1 install for leveraging GPU acceleration if the graphics card suports it
       * Check if supported [here](https://developer.nvidia.com/cuda-gpus)
       
       * Install CUDA Toolkit from [here](https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exenetwork)
