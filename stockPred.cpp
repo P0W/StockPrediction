@@ -118,9 +118,14 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
 }
 } // namespace
 
+#include "RequestHandler.hpp"
+
 int main(int argc, char **argv) {
 
   if (argc != 2) {
+    RequestHandler reqHandler;
+    reqHandler.startService();
+
     std::cout << "Missing Stock Symbol...reading top 100 BSE stocks\n";
     const std::string bse100File = NetworkConstants::kRootFolder + "BSE100.csv";
     std::string stockSymbol;

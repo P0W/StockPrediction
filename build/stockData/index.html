@@ -1,7 +1,7 @@
 <html>
 
 <body>
-    <h1></h1>
+    <h1 id="heading"></h1>
     <div id="CharContainer"></div>
     <div class="tooltip"></div>
 
@@ -39,6 +39,13 @@
                         .text(o.text);
 
                     updateGraph(o.value, o.text);
+
+                    var url = "http://localhost:8080/stockData/" + o.value + '_train.csv';
+                    fetch(url)
+                        .then(response => response.text())
+                        .then(contents => console.log(contents))
+                        .catch(() => console.log("Can’t access " + url + " Blocked by browser?"))
+
                 })
                 .selectAll("option").data(data)
                 .enter().append("option")

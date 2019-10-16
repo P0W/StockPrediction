@@ -1,7 +1,7 @@
 .predictedStock {
 
    fill: none;
-   stroke: white;
+   stroke: red;
    stroke-width: 1.0;
    opacity: 0.5;
    shape-rendering: crispEdges;
@@ -10,7 +10,7 @@
 .originalStock {
 
    fill: none;
-   stroke: darkgray;
+   stroke: rgb(169, 169, 169);
    stroke-width: 1.0;
    opacity: 0.5;
    shape-rendering: crispEdges;
