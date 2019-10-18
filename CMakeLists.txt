@@ -1,6 +1,6 @@
 
 #sudo cmake -DCMAKE_PREFIX_PATH=$PWD/../libtorch -G"Eclipse CDT4 - Unix Makefiles" ../example-app/
-#"C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_PREFIX_PATH=$PWD/../../libtorch  cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
+#cmake  -DBOOST_INCLUDEDIR=$PWD/../../boost  -DBOOST_LIBRARYDIR=$PWD/../../boost    -DCMAKE_PREFIX_PATH=$PWD/../../libtorch -DCMAKE_GENERATOR_PLATFORM=x64 ..
 
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
