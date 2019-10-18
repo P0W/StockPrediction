@@ -328,9 +328,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\RequestHandler.hpp" />
+    <ClInclude Include="..\StockPredictor.hpp" />
     <ClInclude Include="D:\playground\StockPrediction\ITimeSeries.hpp" />
     <ClInclude Include="D:\playground\StockPrediction\MinMaxScaler.hpp" />
     <ClCompile Include="..\RequestHandler.cpp" />
+    <ClCompile Include="..\StockPredictor.cpp" />
     <ClCompile Include="D:\playground\StockPrediction\NetworkConstants.cpp" />
     <ClInclude Include="D:\playground\StockPrediction\NetworkConstants.hpp" />
     <ClCompile Include="D:\playground\StockPrediction\NetworkTrainer.cpp" />

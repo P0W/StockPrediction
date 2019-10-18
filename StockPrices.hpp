@@ -51,14 +51,22 @@ public:
   std::tuple<std::vector<float>, std::vector<float>, std::vector<std::string>>
   getTrainData() const;
 
+  std::tuple<std::vector<float>, std::vector<float>, std::vector<std::string>>
+  getTestData() const;
+
 private:
   MinMaxScaler<float> &scaler;
   std::vector<float> stockClosePrices;
   std::vector<float> normalizedStockClosePrices;
   std::vector<std::string> dates;
 
+  std::vector<std::string> dates_train;
+  std::vector<std::string> dates_test;
+
   std::vector<float> x_train;
   std::vector<float> y_train;
+  std::vector<float> x_test;
+  std::vector<float> y_test;
 };
 
 #endif /* STOCKPRICES_HPP_ */

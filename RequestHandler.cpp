@@ -1,6 +1,6 @@
 #include "RequestHandler.hpp"
 
-
+#include "StockPredictor.hpp"
 
 namespace {
     namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -78,12 +78,12 @@ namespace {
     // caller to pass a generic lambda for receiving the response.
     template<
         class Body, class Allocator,
-        class Send>
+        class Send, typename StockRequest>
         void
         handle_request(
             beast::string_view doc_root,
             http::request<Body, http::basic_fields<Allocator>>&& req,
-            Send&& send)
+            Send&& send, StockRequest&& stockRequest)
     {
         // Returns a bad request response
         auto const bad_request =
@@ -150,8 +150,13 @@ namespace {
             return send(not_found(req.target()));
 
         // Handle an unknown error
-        if (ec)
+        if (ec) {
             return send(server_error(ec.message()));
+
+            stockRequest->loadModel(path);
+            stockRequest->testModel();
+            body.open((path + "_test.csv").c_str(), beast::file_mode::scan, ec);
+        }
 
         // Cache the size since we need it after the move
         auto const size = body.size();
@@ -229,6 +234,7 @@ namespace {
         beast::tcp_stream stream_;
         beast::flat_buffer buffer_;
         std::shared_ptr<std::string const> doc_root_;
+        std::shared_ptr<StockPredictor> stockPredictor_;
         http::request<http::string_body> req_;
         std::shared_ptr<void> res_;
         send_lambda lambda_;
@@ -237,9 +243,10 @@ namespace {
         // Take ownership of the stream
         session(
             tcp::socket&& socket,
-            std::shared_ptr<std::string const> const& doc_root)
+            std::shared_ptr<std::string const> const& doc_root, const std::shared_ptr<StockPredictor>& stockPredictor )
             : stream_(std::move(socket))
             , doc_root_(doc_root)
+            , stockPredictor_(stockPredictor)
             , lambda_(*this)
         {
         }
@@ -290,7 +297,7 @@ namespace {
                 return fail(ec, "read");
 
             // Send the response
-            handle_request(*doc_root_, std::move(req_), lambda_);
+            handle_request(*doc_root_, std::move(req_), lambda_, stockPredictor_);
         }
 
         void
@@ -337,15 +344,16 @@ namespace {
         net::io_context& ioc_;
         tcp::acceptor acceptor_;
         std::shared_ptr<std::string const> doc_root_;
-
+        std::shared_ptr<StockPredictor> stockPredictor_;
     public:
         listener(
             net::io_context& ioc,
             tcp::endpoint endpoint,
-            std::shared_ptr<std::string const> const& doc_root)
+            std::shared_ptr<std::string const> const& doc_root, const std::shared_ptr<StockPredictor>& stockPredictor)
             : ioc_(ioc)
             , acceptor_(net::make_strand(ioc))
             , doc_root_(doc_root)
+            , stockPredictor_(stockPredictor)
         {
             beast::error_code ec;
 
@@ -414,7 +422,7 @@ namespace {
                 // Create the session and run it
                 std::make_shared<session>(
                     std::move(socket),
-                    doc_root_)->run();
+                    doc_root_, stockPredictor_)->run();
             }
 
             // Accept another connection
@@ -434,7 +442,7 @@ RequestHandler::~RequestHandler()
 {
 }
 
-void RequestHandler::startService()
+void RequestHandler::startService(const std::shared_ptr<StockPredictor>& stockPredictor)
 {
     // http://localhost:8080/stockData/stock.css
     auto const address = net::ip::make_address("127.0.0.1");
@@ -449,7 +457,7 @@ void RequestHandler::startService()
     std::make_shared<listener>(
         ioc,
         tcp::endpoint{ address, port },
-        doc_root)->run();
+        doc_root, stockPredictor)->run();
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;

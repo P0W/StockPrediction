@@ -15,12 +15,14 @@
 #include <thread>
 #include <vector>
 
+#include "StockPredictor.hpp"
+
 class RequestHandler
 {
 public:
     RequestHandler();
     virtual ~RequestHandler();
 
-    void startService();
+    void startService(const std::shared_ptr<StockPredictor>&);
 };
 
