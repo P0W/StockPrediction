@@ -17,6 +17,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE Debug)
 LIST(APPEND CMAKE_PROGRAM_PATH  "$(CMAKE_PREFIX_PATH)/lib" ...)
 
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
+find_package(Boost REQUIRED COMPONENTS date_time) 
+
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 if(MSVC)
   # Force to always compile with W4
   if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -55,7 +64,7 @@ else()
     target_link_libraries(${PROJECT_NAME} curl)
 endif()
 
-target_link_libraries(${PROJECT_NAME}  "${TORCH_LIBRARIES}")
+target_link_libraries(${PROJECT_NAME}  "${TORCH_LIBRARIES}" "${Boost_LIBRARIES}")
 
 set_property(TARGET ${PROJECT_NAME}  PROPERTY CXX_STANDARD 17)
 add_custom_target(build-time-make-directory ALL
