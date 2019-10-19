@@ -17,9 +17,10 @@
 #include "NetworkConstants.hpp"
 #include "StockPrices.hpp"
 #include <algorithm>
-#include <cstdio>
-#include <vector>
 #include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <vector>
 
 namespace {
 
@@ -163,9 +164,9 @@ bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
 }
 void StockPrices::reshapeSeries(float testSplitRatio,
                                 int64_t num_prev_samples) {
-  int64_t test_size =
-      static_cast<int64_t>(normalizedStockClosePrices.size() * testSplitRatio);
-  int64_t trainSize = normalizedStockClosePrices.size() - test_size;
+  int64_t dataSet_size = normalizedStockClosePrices.size();
+  int64_t test_size = static_cast<int64_t>(dataSet_size * testSplitRatio);
+  int64_t trainSize = dataSet_size - test_size;
 
   int64_t idx, xIdx;
 
@@ -179,26 +180,30 @@ void StockPrices::reshapeSeries(float testSplitRatio,
 
   // Adjust dates, strip off first num_prev_samples
   dates_train.reserve(y_train.size());
-  dates.erase(std::begin(dates), std::begin(dates) + num_prev_samples);
-  std::copy(std::cbegin(dates), std::cbegin(dates) + y_train.size(), std::back_inserter(dates_train));
+  // dates.erase(std::begin(dates), std::begin(dates) + num_prev_samples);
+  std::copy(std::cbegin(dates) + num_prev_samples,
+            std::cbegin(dates) + num_prev_samples + y_train.size(),
+            std::back_inserter(dates_train));
 
   assert(dates_train.size() == y_train.size());
 
   // Test Data Set
-  for (idx = num_prev_samples; idx < test_size; ++idx) {
-      for (xIdx = idx - num_prev_samples; xIdx < idx; ++xIdx) {
-          x_test.push_back(normalizedStockClosePrices[trainSize + xIdx]);
-      }
+  for (idx = trainSize + num_prev_samples; idx < dataSet_size; ++idx) {
+    for (xIdx = trainSize + idx - num_prev_samples; xIdx < idx; ++xIdx) {
+      x_test.push_back(normalizedStockClosePrices[xIdx]);
+    }
 
-      y_test.push_back(normalizedStockClosePrices[trainSize + idx]);
+    y_test.push_back(normalizedStockClosePrices[idx]);
   }
 
   // Adjust dates, strip off first num_prev_samples
   dates_test.reserve(y_test.size());
-  std::copy(std::cbegin(dates) + y_train.size(), std::cend(dates), std::back_inserter(dates_test));
+  std::copy(std::cbegin(dates) + trainSize + num_prev_samples, std::cend(dates),
+            std::back_inserter(dates_test));
 
   assert(dates_test.size() == y_test.size());
-  assert(normalizedStockClosePrices.size() == y_test.size() + y_train.size());
+  assert(normalizedStockClosePrices.size() - 2 * num_prev_samples ==
+         y_test.size() + y_train.size());
 }
 
 void StockPrices::normalizeData() {
@@ -212,5 +217,5 @@ StockPrices::getTrainData() const {
 
 std::tuple<std::vector<float>, std::vector<float>, std::vector<std::string>>
 StockPrices::getTestData() const {
-    return std::make_tuple(x_test, y_test, dates_test);
+  return std::make_tuple(x_test, y_test, dates_test);
 }

@@ -1,12 +1,12 @@
 #pragma once
 
+#include <algorithm>
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
 #include <boost/config.hpp>
-#include <algorithm>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
@@ -17,12 +17,10 @@
 
 #include "StockPredictor.hpp"
 
-class RequestHandler
-{
+class RequestHandler {
 public:
-    RequestHandler();
-    virtual ~RequestHandler();
+  RequestHandler();
+  virtual ~RequestHandler();
 
-    void startService(const std::shared_ptr<StockPredictor>&);
+  void startService(const std::shared_ptr<StockPredictor> &);
 };
-
