@@ -1,3 +1,15 @@
+#include <algorithm>
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/config.hpp>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <string>
+
 #include "RequestHandler.hpp"
 
 #include "StockPredictor.hpp"
@@ -142,8 +154,15 @@ void handle_request(beast::string_view doc_root,
 
   // Build the path to the requested file
   std::string path = path_cat(doc_root, req.target());
-  if (req.target().back() == '/')
-    path.append("index.html");
+  if (path.find("index.html") != std::string::npos) {
+    std::cout << "WEBREQUEST Index.HTML\n";
+  } else if (path.find("BOM") != std::string::npos &&
+             path.find("csv") == std::string::npos) {
+    std::cout << "WEBREQUEST Loading Model " << path << '\n';
+    stockRequest->loadModel(path);
+    stockRequest->testModel();
+    path = path + "_test.csv";
+  }
 
   // Attempt to open the file
   beast::error_code ec;
@@ -151,16 +170,14 @@ void handle_request(beast::string_view doc_root,
   body.open(path.c_str(), beast::file_mode::scan, ec);
 
   // Handle the case where the file doesn't exist
-  if (ec == beast::errc::no_such_file_or_directory)
+  if (ec == beast::errc::no_such_file_or_directory) {
+    std::cout << "WEBREQUEST " << path << '\n';
     return send(not_found(req.target()));
+  }
 
   // Handle an unknown error
   if (ec) {
     return send(server_error(ec.message()));
-
-    stockRequest->loadModel(path);
-    stockRequest->testModel();
-    body.open((path + "_test.csv").c_str(), beast::file_mode::scan, ec);
   }
 
   // Cache the size since we need it after the move
@@ -378,30 +395,21 @@ private:
 
 } // namespace
 
-RequestHandler::RequestHandler() {}
+RequestHandler::RequestHandler() : m_ioc{1} {}
 
 RequestHandler::~RequestHandler() {}
 
-void RequestHandler::startService(
+void RequestHandler::setupService(
     const std::shared_ptr<StockPredictor> &stockPredictor) {
   // http://localhost:8080/stockData/stock.css
   auto const address = net::ip::make_address("127.0.0.1");
   auto const port = static_cast<unsigned short>(8080);
   auto const doc_root = std::make_shared<std::string>(".");
-  auto const threads = 1;
-
-  // The io_context is required for all I/O
-  net::io_context ioc{threads};
 
   // Create and launch a listening port
-  std::make_shared<listener>(ioc, tcp::endpoint{address, port}, doc_root,
+  std::make_shared<listener>(m_ioc, tcp::endpoint{address, port}, doc_root,
                              stockPredictor)
       ->run();
-
-  // Run the I/O service on the requested number of threads
-  std::vector<std::thread> v;
-  v.reserve(threads);
-  for (auto i = threads; i > 0; --i)
-    v.emplace_back([&ioc] { ioc.run(); });
-  v[0].join();
 }
+
+void RequestHandler::run() { m_ioc.run(); }

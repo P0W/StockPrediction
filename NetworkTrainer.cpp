@@ -98,7 +98,8 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
   if (!modelName.empty()) {
     try {
       loadModel(neuralNetLogFile);
-      std::cout << "Loaded a existing trained model\n";
+      std::cout << "Loaded a existing trained model " << neuralNetLogFile
+                << "\n";
     } catch (...) {
       std::cout << "Starting a fresh training...\n";
     }

@@ -40,7 +40,7 @@
 
                     updateGraph(o.value, o.text);
 
-                    var url = "http://localhost:8080/stockData/" + o.value + '_train.csv';
+                    var url = "http://localhost:8080/stockData/" + o.value;
                     fetch(url)
                         .then(response => response.text())
                         .then(contents => console.log(contents))

@@ -131,19 +131,21 @@ StockLSTM::StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
 StockLSTM::~StockLSTM() {}
 
 torch::Tensor StockLSTM::forward(const torch::Tensor &input) {
+  // std::cout << input.sizes() << '\n';  //[5, 3616, 64]
+
   torch::nn::RNNOutput lstm_out = this->lstm1->forward(input);
 
   // std::cout << lstm_out.output.sizes() << '\n';  //[5, 3616, 64]
   lstm_out = this->lstm2->forward(lstm_out.output);
 
-  /*std::cout << lstm_out.output.sizes() << '\n';  // same as above [5, 3616,
-  64] std::cout << lstm_out.output[-1].sizes() << '\n';  //[ 3616, 64 ]
-  std::cout << lstm_out.output[-1].view({this->batch_size, -1}).sizes()
-            << '\n';  //[ 3616, 64 ] */
+  // std::cout << lstm_out.output.sizes() << '\n';  // same as above [5,
+  // 3616,64] std::cout << lstm_out.output[-1].sizes() << '\n';  //[ 3616, 64 ]
+  // std::cout << lstm_out.output[-1].view({this->batch_size, -1}).sizes() <<
+  // '\n';  //[ 3616, 64 ]
 
   torch::Tensor y_pred = this->linear(lstm_out.output[-1]);
-  /*std::cout << y_pred.sizes() << '\n';             //[3616,1]
-  std::cout << y_pred.view({-1}).sizes() << '\n';  //[3616]*/
+  // std::cout << y_pred.sizes() << '\n';             //[3616,1]
+  // std::cout << y_pred.view({-1}).sizes() << '\n';  //[3616]
 
   return y_pred.view({-1});
 }

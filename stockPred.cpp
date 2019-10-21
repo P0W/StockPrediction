@@ -7,12 +7,14 @@
 
 #include <fstream>
 #include <memory>
+#include <thread>
 
 #include "MinMaxScaler.hpp"
 #include "NetworkTrainer.hpp"
 #include "StockPrices.hpp"
 
 #include "NetworkConstants.hpp"
+#include "RequestHandler.hpp"
 #include "csv.h"
 
 namespace {
@@ -118,13 +120,18 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
 }
 } // namespace
 
-#include "RequestHandler.hpp"
-
 int main(int argc, char **argv) {
 
-  if (argc != 2) {
-    //RequestHandler reqHandler;
-    //reqHandler.startService(std::make_shared<StockPredictor>());
+  if (argc == 3) {
+    std::string stockParam = argv[2];
+    bool testingMode = false;
+    if (stockParam.find("testMode") != std::string::npos) {
+      testingMode = true;
+    }
+    RequestHandler reqHandler;
+    reqHandler.setupService(std::make_shared<StockPredictor>());
+
+    std::thread t([&reqHandler]() { reqHandler.run(); });
 
     std::cout << "Missing Stock Symbol...reading top 100 BSE stocks\n";
     const std::string bse100File = NetworkConstants::kRootFolder + "BSE100.csv";
@@ -144,12 +151,17 @@ int main(int argc, char **argv) {
         std::cout << "Already Trained " << companyName << "..Skipping\n";
         continue;
       } else {
+        if (testingMode) {
+          std::cout << "Waiting for WEBREQUESTS...\n";
+          break;
+        }
         if (!NetworkTrainerFacade(stockSymbol, companyName)) {
           continue;
         }
         flag = true;
       }
     }
+    t.join();
   } else {
     (void)NetworkTrainerFacade(argv[1]);
   }

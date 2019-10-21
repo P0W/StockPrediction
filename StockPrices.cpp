@@ -111,18 +111,26 @@ StockPrices::StockPrices(MinMaxScaler<float> &scaler)
 StockPrices::~StockPrices() {}
 
 bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
-  int errorCode = downloadStockData(stockSymbol);
+
+  const auto pos = stockSymbol.find_last_of('/');
+  std::string rawStockSymbol = stockSymbol;
+
+  if (pos != std::string::npos) {
+    rawStockSymbol = stockSymbol.substr(pos + 1);
+  }
+
+  int errorCode = downloadStockData(rawStockSymbol);
   if (errorCode != 0) {
-    std::printf("Cannot load %s\n", stockSymbol.c_str());
+    std::printf("Cannot load %s\n", rawStockSymbol.c_str());
     return true;
   }
 
-  io::CSVReader<2> in(NetworkConstants::kRootFolder + stockSymbol + ".csv");
+  io::CSVReader<2> in(NetworkConstants::kRootFolder + rawStockSymbol + ".csv");
   try {
     in.read_header(io::ignore_extra_column, "Date", "Close");
   } catch (std::exception e) {
     const auto errorMsg = e.what();
-    std::printf("%s - error reading %s\n", errorMsg, stockSymbol.c_str());
+    std::printf("%s - error reading %s\n", errorMsg, rawStockSymbol.c_str());
     return true;
   }
 
@@ -189,7 +197,7 @@ void StockPrices::reshapeSeries(float testSplitRatio,
 
   // Test Data Set
   for (idx = trainSize + num_prev_samples; idx < dataSet_size; ++idx) {
-    for (xIdx = trainSize + idx - num_prev_samples; xIdx < idx; ++xIdx) {
+    for (xIdx = idx - num_prev_samples; xIdx < idx; ++xIdx) {
       x_test.push_back(normalizedStockClosePrices[xIdx]);
     }
 

@@ -1,19 +1,8 @@
-#pragma once
+#ifndef REQUEST_HANDLER_HPP_
+#define REQUEST_HANDLER_HPP_
 
-#include <algorithm>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/config.hpp>
-#include <cstdlib>
-#include <functional>
-#include <iostream>
+#include <boost/asio.hpp>
 #include <memory>
-#include <string>
-#include <thread>
-#include <vector>
 
 #include "StockPredictor.hpp"
 
@@ -22,5 +11,12 @@ public:
   RequestHandler();
   virtual ~RequestHandler();
 
-  void startService(const std::shared_ptr<StockPredictor> &);
+  void setupService(const std::shared_ptr<StockPredictor> &);
+
+  void run();
+
+private:
+  boost::asio::io_context m_ioc;
 };
+
+#endif //! REQUEST_HANDLER_HPP_

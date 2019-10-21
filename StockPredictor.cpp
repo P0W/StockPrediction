@@ -4,7 +4,23 @@
 #include "StockPrices.hpp"
 #include <iostream>
 
-StockPredictor::StockPredictor() : m_lstmNetwork(nullptr), m_stockSymbol{} {}
+StockPredictor::StockPredictor() : m_lstmNetwork(nullptr), m_stockSymbol{} {
+  torch::nn::LSTMOptions lstmOpts1(NetworkConstants::input_size,
+                                   NetworkConstants::hidden_size);
+  torch::nn::LSTMOptions lstmOpts2(NetworkConstants::hidden_size,
+                                   NetworkConstants::hidden_size);
+  lstmOpts1.layers(NetworkConstants::num_of_layers)
+      .dropout(NetworkConstants::klsmt1DropOut)
+      .with_bias(NetworkConstants::kIncludeBias);
+  lstmOpts2.layers(NetworkConstants::num_of_layers)
+      .dropout(NetworkConstants::klsmt2DropOut)
+      .with_bias(NetworkConstants::kIncludeBias);
+
+  torch::nn::LinearOptions linearOpts(NetworkConstants::hidden_size,
+                                      NetworkConstants::output_size);
+  linearOpts.with_bias(false);
+  m_lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
+}
 
 void StockPredictor::loadModel(const std::string &stockSymbol) {
   if (!stockSymbol.empty()) {
@@ -39,20 +55,33 @@ void StockPredictor::testModel() {
 
   // Convert values to Pytorch Tensors
   torch::Tensor x_test = torch::tensor(std::get<0>(testData));
+  x_test = x_test.view({NetworkConstants::kPrevSamples, -1, 1});
 
   // Predict the output using the neural network from test dataSet
-  torch::Tensor y_test_pred = m_lstmNetwork->forward(x_test);
+  if (m_lstmNetwork) {
+    std::cout << "WEBREQUEST Calling forward on trained model for testset \n";
 
-  std::ofstream fileHandle(testPreditorLogFile, std::ios::trunc);
-  fileHandle << "date,price\n";
-  if (fileHandle.good()) {
-    for (int64_t idx = 0; idx < y_test_pred.size(0); ++idx) {
-      fileHandle << allDates.at(idx) << ","
-                 << minmaxScaler(y_test_pred[idx].item<float>()) << '\n';
+    x_test =
+        x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+
+    torch::Tensor y_test_pred = m_lstmNetwork->forward(x_test);
+
+    std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
+              << '\n';
+
+    std::ofstream fileHandle(testPreditorLogFile, std::ios::trunc);
+    fileHandle << "date,price\n";
+    if (fileHandle.good()) {
+      for (int64_t idx = 0; idx < y_test_pred.size(0); ++idx) {
+        fileHandle << allDates.at(idx) << ","
+                   << minmaxScaler(y_test_pred[idx].item<float>()) << '\n';
+      }
     }
-  }
 
-  fileHandle.close();
+    fileHandle.close();
+  } else {
+    std::cout << "WEBREQUEST Cannnot predict data. \n";
+  }
 }
 
 StockPredictor::~StockPredictor() {}
