@@ -1,5 +1,9 @@
+
+#include <torch/torch.h>
 #include "StockPredictor.hpp"
 #include "NetworkConstants.hpp"
+#include "StockLSTM.hpp"
+#include "StockPrices.hpp"
 #include <cassert>
 #include <iostream>
 
@@ -58,7 +62,7 @@ void StockPredictor::predict(const int64_t N) {
     std::vector<float> predictedPrices;
 
     for (int64_t t = 0; t < N; ++t) {
-        auto nextClosingPriceTensor = predict(testSamples);
+        const auto& nextClosingPriceTensor = *predict(testSamples);
         float nextClosingPrice = m_minmaxScaler(nextClosingPriceTensor[0].item<float>());
         predictedPrices.push_back(nextClosingPrice);
 
@@ -88,11 +92,11 @@ void StockPredictor::testModel() {
   if (m_lstmNetwork) {
     std::cout << "WEBREQUEST Calling forward on trained model for testset \n";
 
-    torch::Tensor y_test_pred = predict(std::get<0>(testData));
+    const auto& y_test_pred = predict(std::get<0>(testData));
 
     std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
               << '\n';
-    fileLogger(testPreditorLogFile, allDates, y_test_pred);
+    fileLogger(testPreditorLogFile, allDates, *y_test_pred);
   } else {
     std::cout << "WEBREQUEST Cannnot predict data. \n";
   }
@@ -102,7 +106,7 @@ StockPredictor::~StockPredictor() {}
 
 void StockPredictor::loadTimeSeries() {}
 
-torch::Tensor StockPredictor::predict(const std::vector<float>& input)
+std::shared_ptr<torch::Tensor> StockPredictor::predict(const std::vector<float>& input)
 {
     
     auto x_test = torch::tensor(input);
@@ -111,7 +115,7 @@ torch::Tensor StockPredictor::predict(const std::vector<float>& input)
         x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
     auto pred = m_lstmNetwork->forward(x_test);
 
-    return pred;
+    return std::make_shared<torch::Tensor>(pred);
 }
 
 void StockPredictor::fileLogger(const std::string & logFileName, const std::vector<std::string>& allDates, const torch::Tensor& y_test) const

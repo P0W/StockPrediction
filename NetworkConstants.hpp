@@ -33,6 +33,8 @@ extern const size_t kMaxStockPrices;
 
 extern const std::string kRootFolder;
 
+extern const unsigned short kClientPort;
+
 } // namespace NetworkConstants
 
 #endif // NETWORKCONSTANTS_HPP_

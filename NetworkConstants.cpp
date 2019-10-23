@@ -26,3 +26,5 @@ const double NetworkConstants::klsmt1DropOut = 0.0;
 const double NetworkConstants::klsmt2DropOut = 0.0;
 
 const std::string NetworkConstants::kRootFolder = "stockData/";
+
+const unsigned short NetworkConstants::kClientPort = 4242;

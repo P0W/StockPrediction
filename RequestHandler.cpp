@@ -13,6 +13,7 @@
 #include "RequestHandler.hpp"
 
 #include "StockPredictor.hpp"
+#include "NetworkConstants.hpp"
 
 namespace {
 namespace beast = boost::beast;   // from <boost/beast.hpp>
@@ -403,7 +404,7 @@ void RequestHandler::setupService(
     const std::shared_ptr<StockPredictor> &stockPredictor) {
   // http://localhost:8080/stockData/stock.css
   auto const address = net::ip::make_address("127.0.0.1");
-  auto const port = static_cast<unsigned short>(8080);
+  auto const port = static_cast<unsigned short>(NetworkConstants::kClientPort);
   auto const doc_root = std::make_shared<std::string>(".");
 
   // Create and launch a listening port

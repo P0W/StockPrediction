@@ -8,11 +8,14 @@
 #ifndef NETWORKTRAINER_HPP_
 #define NETWORKTRAINER_HPP_
 
-#include "StockLSTM.hpp"
-#include <fstream>
 #include <memory>
-#include <torch/torch.h>
 
+class StockLSTM;
+namespace torch {
+    namespace optim {
+        class Optimizer;
+    }
+}
 class NetworkTrainer {
 public:
   const float kRunningLoss = 0.0001;
@@ -22,13 +25,13 @@ public:
                  const std::string &companyName);
   virtual ~NetworkTrainer();
 
-  torch::Tensor fit(const torch::Tensor &x_train, const torch::Tensor &y_train);
+  std::vector<float> fit(const std::vector<float> &x_train, const std::vector<float> &y_train);
 
   void saveModel(const std::string &fileName) const;
   void loadModel(const std::string &fileName);
 
   virtual void dataWriter(const std::string &fileName,
-                          const torch::Tensor &data) {
+      const std::vector<float> &data) {
     (void)data;
     (void)fileName;
   }

@@ -5,12 +5,14 @@
  *      Author: Prashant Srivastava
  */
 
+#include "StockLSTM.hpp"
 #include "NetworkTrainer.hpp"
 #include "NetworkConstants.hpp"
 #include "Timer.hpp"
 #include <iostream>
-
 #include <fstream>
+
+#include <torch/torch.h>
 
 namespace {
 void logFullyTrainedModel(const std::string &modelName,
@@ -30,6 +32,14 @@ void logFullyTrainedModel(const std::string &modelName,
                << epoch << "," << time << '\n';
   }
   fileHandle.close();
+}
+
+std::vector<float> extractData(torch::Tensor& tensorData) {
+    std::vector<float> result;
+    for (int64_t idx = 0; idx < tensorData.size(0); ++idx) {
+        result.push_back(tensorData[idx].item<float>());
+    }
+    return result;
 }
 } // namespace
 
@@ -70,17 +80,18 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
 
 NetworkTrainer::~NetworkTrainer() {}
 
-torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
-                                  const torch::Tensor &y_train) {
+std::vector<float> NetworkTrainer::fit(const std::vector<float>& x_train, const std::vector<float>& y_train)
+{
+
   torch::Tensor y_pred, input, target;
   torch::Tensor loss;
-  input = x_train.view({prevSamples, -1, 1});
+  input = torch::tensor(x_train).view({prevSamples, -1, 1});
 
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
-    target = y_train.to(torch::kCUDA);
+    target = torch::tensor(x_train).to(torch::kCUDA);
   } else {
-    target = y_train;
+    target = torch::tensor(x_train);
   }
 
   float running_loss = 1, minimumLoss = 1;
@@ -126,19 +137,19 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
     // Save model and write the predicted tensor
     if (minimumLoss > running_loss) {
       saveModel(neuralNetLogFile);
-      dataWriter(predictLogFile, y_pred);
+      dataWriter(predictLogFile, extractData(y_pred));
       minimumLoss = running_loss;
     }
     if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
                 << minimumLoss << std::endl;
-      return y_pred;
+      return extractData(y_pred);
     }
 
     else if (running_loss < NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
       logFullyTrainedModel(modelName, companyName, running_loss, epoch, t2);
-      return y_pred;
+      return extractData(y_pred);
     }
 
     else if (epoch % 10 == 0) {
@@ -149,7 +160,7 @@ torch::Tensor NetworkTrainer::fit(const torch::Tensor &x_train,
     epoch++;
   }
 
-  return y_pred;
+  return extractData(y_pred);
 }
 
 void NetworkTrainer::saveModel(const std::string &fileName) const {
