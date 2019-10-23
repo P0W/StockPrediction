@@ -17,16 +17,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE Debug)
 LIST(APPEND CMAKE_PROGRAM_PATH  "$(CMAKE_PREFIX_PATH)/lib" ...)
 
-#set(Boost_USE_STATIC_LIBS ON) 
-#set(Boost_USE_MULTITHREADED ON)  
-#set(Boost_USE_STATIC_RUNTIME ON) 
-#find_package(Boost REQUIRED COMPONENTS date_time) 
+# set(Boost_USE_STATIC_LIBS ON) 
+# set(Boost_USE_MULTITHREADED ON)  
+# set(Boost_USE_STATIC_RUNTIME ON) 
+find_package(Boost REQUIRED COMPONENTS date_time regex) 
 
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-if(MSVC)
+if(WIN32)
   # Force to always compile with W4
   if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
     string(REGEX REPLACE "/W[0-4]" "/W2" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

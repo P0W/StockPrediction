@@ -122,8 +122,8 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
 
 int main(int argc, char **argv) {
 
-  if (argc == 3) {
-    std::string stockParam = argv[2];
+  if (argc == 2) {
+    std::string stockParam = argv[1];
     bool testingMode = false;
     if (stockParam.find("testMode") != std::string::npos) {
       testingMode = true;
