@@ -30,20 +30,26 @@
                 index === self.findIndex((t) => (
                     t.symbol === thing.symbol
                 ))
-            )
+            );
+            data.push({
+                'symbol': 'DontSelect',
+                'company': '---'
+            });
             d3.select("#StockSelect")
                 .append("select")
                 .on('change', function () {
                     var o = this.options[this.selectedIndex];
+                    if (o.value === 'DontSelect') {
+                        return;
+                    }
                     d3.select('h1')
                         .text(o.text);
-
-                    updateGraph(o.value, o.text);
-
-                    var url = "http://localhost:8080/stockData/" + o.value;
+                    var url = "http://localhost:4242/stockData/" + o.value;
                     fetch(url)
                         .then(response => response.text())
-                        .then(contents => console.log(contents))
+                        .then(contents => {
+                            updateGraph(o.value, o.text);
+                        })
                         .catch(() => console.log("Can’t access " + url + " Blocked by browser?"))
 
                 })
@@ -57,16 +63,15 @@
                 });
 
             // Initial Value
-            d3.select('select').property('value', 'BOM532540');
-            updateGraph('BOM532540', 'TATA CONSULTANCY SERVICES LTD.');
+            d3.select('select').property('value', 'DontSelect');
         });
 
         function updateGraph(stockSymbol, company) {
             d3.select('h1')
                 .text(company);
             clearGraph();
-            plotStockPrice(stockSymbol + '_train.csv');
-            plotStockPrice(stockSymbol + '_pred.csv', true);
+            plotStockPrice(stockSymbol + '_test.csv');
+            plotStockPrice(stockSymbol + '_test_pred.csv', true);
         }
     </script>
 </body>

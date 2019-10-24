@@ -55,8 +55,10 @@ var valueLine = d3.line()
    .x(function (d) { return x(d.date) })
    .y(function (d) { return y(d.value) });
 
+var bisectDate = d3.bisector(function (d) { return d.date; }).left;
+
 // A function that set idleTimeOut to null
-var idleTimeout, chartArea, cursor;
+var idleTimeout, chartArea, cursor, stockData = null;
 function idled() { idleTimeout = null; }
 
 
@@ -82,7 +84,6 @@ function resetted() {
       .call(zoom.transform, d3.zoomIdentity);
 
 }
-
 
 // A function that update the chart for given boundaries
 function updateChart() {
@@ -128,16 +129,35 @@ function dbClickHandler(data) {
       .attr("d", valueLine);
 }
 
-
-function setUpChart(data) {
-   var bisectDate = d3.bisector(function (d) { return d.date; }).left;
-
-   x.domain(d3.extent(data, function (d) { return d.date; }));
+function setInitialDomain(newData) {
+   x.domain(d3.extent(newData, function (d) {
+      return d.date;
+   }));
    x2.domain(x.domain());
-   y.domain([0, d3.max(data, function (d) { return +d.value; })])
+
+   y.domain([0, d3.max(newData, function (d) {
+      return +d.value;
+   })]);
 
    xAxis.call(xScale);
    yAxis.call(yScale);
+}
+
+function resetDomain(newData) {
+   var currDomain = x.domain();
+   x.domain([Math.min(currDomain[0], newData[0].date), Math.max(currDomain[1], newData[newData.length - 1].date)]);
+   x2.domain(x.domain());
+
+   var currDomain = y.domain();
+   y.domain([0, Math.max(currDomain[1], d3.max(newData, function (d) { return +d.value; }))]);
+
+   xAxis.call(xScale);
+   yAxis.call(yScale);
+}
+
+function setUpChart() {
+
+   setInitialDomain(stockData);
 
    // Add brushing
    // Add the brush feature using the d3.brush function
@@ -157,7 +177,6 @@ function setUpChart(data) {
       .call(zoom);
 
    var x1 = x;
-   var data = data;
 
    var marker = svg.append('circle')
       .attr('class', 'marker');
@@ -174,10 +193,10 @@ function setUpChart(data) {
       var mouse = d3.mouse(this);
       cursor.style('display', 'block');
       var mouseDate = x1.invert(mouse[0]);
-      var i = bisectDate(data, mouseDate);
+      var i = bisectDate(stockData, mouseDate);
       if (i <= 0) return;
 
-      var d0 = data[i - 1];
+      var d0 = stockData[i - 1];
       var d = d0;
       var xPos = x1(d.date);
       var yPos = y(d.value);
@@ -210,6 +229,30 @@ function setUpChart(data) {
 
 }
 
+function joinAllStockData(newData) {
+   var temStockData = {};
+
+   if (stockData !== null) {
+      stockData.forEach(function (s) {
+         var key = d3.timeFormat('%s')(s.date);
+         temStockData[key] = s.value;
+      });
+   }
+
+   newData.forEach(function (s) {
+      var key = d3.timeFormat('%s')(s.date);
+      temStockData[key] = s.value;
+   });
+
+   stockData = [];
+   Object.keys(temStockData).forEach(function (d) {
+      stockData.push({
+         'date': d3.timeParse("%s")(d),
+         'value': temStockData[d]
+      })
+   });
+}
+
 function plotStockPrice(fileName, isPredicted) {
 
    //Read the data
@@ -220,30 +263,32 @@ function plotStockPrice(fileName, isPredicted) {
       },
 
       // Now I can use this dataset:
-      function (data) {
+      function (dataset) {
          if (!isPredicted) {
-            setUpChart(data);
-
+            stockData = [];
+            joinAllStockData(dataset);
+            setUpChart();
             // Add the line
             svg.select('.brush')
                .append("path")
-               .datum(data)
+               .datum(dataset)
                .attr("class", "line originalStock")
                .attr("d", valueLine);
 
             // If user double click, reinitialize the chart
-            svg.on("dblclick", dbClickHandler.bind(this, data));
+            svg.on("dblclick", dbClickHandler.bind(this, stockData));
 
          } else {
+            joinAllStockData(dataset);
             // Add the line
             svg.select('.brush')
                .append("path")
-               .datum(data)
+               .datum(dataset)
                .attr("class", "line predictedStock")
                .attr("d", valueLine);
 
             // If user double click, reinitialize the chart
-            svg.on("dblclick", dbClickHandler.bind(this, data));
+            svg.on("dblclick", dbClickHandler.bind(this, stockData));
          }
       });
 }

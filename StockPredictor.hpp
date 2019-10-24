@@ -1,3 +1,10 @@
+/*
+ * NetworkConstants.cpp
+ *
+ *  Created on: 20-Oct-2019
+ *      Author: Prashant Srivastava
+ */
+
 #ifndef STOCKPREDICTOR_HPP_
 #define STOCKPREDICTOR_HPP_
 

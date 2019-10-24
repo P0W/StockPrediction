@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 namespace {
@@ -111,21 +112,31 @@ StockPrices::StockPrices(MinMaxScaler<float> &scaler)
 StockPrices::~StockPrices() {}
 
 bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
-
+#ifdef WIN32
+    const auto pos = stockSymbol.find_last_of('\\');
+#else
   const auto pos = stockSymbol.find_last_of('/');
+#endif
   std::string rawStockSymbol = stockSymbol;
 
   if (pos != std::string::npos) {
     rawStockSymbol = stockSymbol.substr(pos + 1);
   }
 
-  int errorCode = downloadStockData(rawStockSymbol);
-  if (errorCode != 0) {
-    std::printf("Cannot load %s\n", rawStockSymbol.c_str());
-    return true;
-  }
+  std::string stockValuesDownloadedFile = NetworkConstants::kRootFolder + rawStockSymbol + ".csv";
 
-  io::CSVReader<2> in(NetworkConstants::kRootFolder + rawStockSymbol + ".csv");
+  // Check if file exists
+  std::ifstream fileHandle(stockValuesDownloadedFile);
+  if (!fileHandle.good()) {
+      std::printf("Downloading %s ...\n", rawStockSymbol.c_str());
+      int errorCode = downloadStockData(rawStockSymbol);
+      if (errorCode != 0) {
+          std::printf("Cannot load %s\n", rawStockSymbol.c_str());
+          return true;
+      }
+  }
+  fileHandle.close();
+  io::CSVReader<2> in(stockValuesDownloadedFile);
   try {
     in.read_header(io::ignore_extra_column, "Date", "Close");
   } catch (std::exception e) {

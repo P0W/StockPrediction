@@ -1,3 +1,9 @@
+/*
+ * NetworkConstants.cpp
+ *
+ *  Created on: 20-Oct-2019
+ *      Author: Prashant Srivastava
+ */
 
 #include <torch/torch.h>
 #include "StockPredictor.hpp"
@@ -81,8 +87,8 @@ void StockPredictor::predict(const int64_t N) {
 
 void StockPredictor::testModel() {
   
-  const std::string testPreditorLogFile = m_stockSymbol + "_test.csv";
-
+  const std::string testPreditorLogFile = m_stockSymbol + "_test_pred.csv";
+  const std::string testLogFile = m_stockSymbol + "_test.csv";
 
   auto testData = m_stockPrices->getTestData();
 
@@ -97,6 +103,7 @@ void StockPredictor::testModel() {
     std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
               << '\n';
     fileLogger(testPreditorLogFile, allDates, *y_test_pred);
+    fileLogger(testLogFile, allDates, std::get<1>(testData));
   } else {
     std::cout << "WEBREQUEST Cannnot predict data. \n";
   }
