@@ -19,8 +19,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <vector>
 
 namespace {
@@ -113,7 +113,7 @@ StockPrices::~StockPrices() {}
 
 bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
 #ifdef WIN32
-    const auto pos = stockSymbol.find_last_of('\\');
+  const auto pos = stockSymbol.find_last_of('\\');
 #else
   const auto pos = stockSymbol.find_last_of('/');
 #endif
@@ -123,17 +123,18 @@ bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
     rawStockSymbol = stockSymbol.substr(pos + 1);
   }
 
-  std::string stockValuesDownloadedFile = NetworkConstants::kRootFolder + rawStockSymbol + ".csv";
+  std::string stockValuesDownloadedFile =
+      NetworkConstants::kRootFolder + rawStockSymbol + ".csv";
 
   // Check if file exists
   std::ifstream fileHandle(stockValuesDownloadedFile);
   if (!fileHandle.good()) {
-      std::printf("Downloading %s ...\n", rawStockSymbol.c_str());
-      int errorCode = downloadStockData(rawStockSymbol);
-      if (errorCode != 0) {
-          std::printf("Cannot load %s\n", rawStockSymbol.c_str());
-          return true;
-      }
+    std::printf("Downloading %s ...\n", rawStockSymbol.c_str());
+    int errorCode = downloadStockData(rawStockSymbol);
+    if (errorCode != 0) {
+      std::printf("Cannot load %s\n", rawStockSymbol.c_str());
+      return true;
+    }
   }
   fileHandle.close();
   io::CSVReader<2> in(stockValuesDownloadedFile);

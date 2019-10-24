@@ -5,15 +5,17 @@
  *      Author: Prashant Srivastava
  */
 
-#include <torch/torch.h>
 #include "StockPredictor.hpp"
 #include "NetworkConstants.hpp"
 #include "StockLSTM.hpp"
 #include "StockPrices.hpp"
 #include <cassert>
 #include <iostream>
+#include <torch/torch.h>
 
-StockPredictor::StockPredictor() : m_minmaxScaler{}, m_lstmNetwork(nullptr), m_stockPrices(nullptr), m_stockSymbol{} {
+StockPredictor::StockPredictor()
+    : m_minmaxScaler{}, m_lstmNetwork(nullptr),
+      m_stockPrices(nullptr), m_stockSymbol{} {
   torch::nn::LSTMOptions lstmOpts1(NetworkConstants::input_size,
                                    NetworkConstants::hidden_size);
   torch::nn::LSTMOptions lstmOpts2(NetworkConstants::hidden_size,
@@ -39,14 +41,13 @@ void StockPredictor::loadModel(const std::string &stockSymbol) {
       m_stockPrices.reset(new StockPrices(m_minmaxScaler));
 
       if (m_stockPrices->loadTimeSeries(m_stockSymbol)) {
-          std::cout << m_stockSymbol << " has one or more bad entries\n";
-      }
-      else {
-          
-          m_stockPrices->normalizeData();
-          m_stockPrices->reshapeSeries(NetworkConstants::kSplitRatio,
-              NetworkConstants::kPrevSamples);
-          torch::load(m_lstmNetwork, trainedModel);
+        std::cout << m_stockSymbol << " has one or more bad entries\n";
+      } else {
+
+        m_stockPrices->normalizeData();
+        m_stockPrices->reshapeSeries(NetworkConstants::kSplitRatio,
+                                     NetworkConstants::kPrevSamples);
+        torch::load(m_lstmNetwork, trainedModel);
       }
       std::cout << "Loaded..." << trainedModel << '\n';
     } catch (...) {
@@ -56,37 +57,42 @@ void StockPredictor::loadModel(const std::string &stockSymbol) {
 }
 
 void StockPredictor::predict(const int64_t N) {
-    // N is the next future N days predictions
-    // For predicting 1 sample we would need last N but NetworkConstants::kPrevSamples samples
-    auto testData = m_stockPrices->getTestData();
-    auto testSamples = std::get<0>(testData);
+  // N is the next future N days predictions
+  // For predicting 1 sample we would need last N but
+  // NetworkConstants::kPrevSamples samples
+  auto testData = m_stockPrices->getTestData();
+  auto testSamples = std::get<0>(testData);
 
-    // Erase all but  NetworkConstants::kPrevSamples samples
-    testSamples.erase(std::begin(testSamples), std::end(testSamples) - NetworkConstants::kPrevSamples);
-    assert(testSamples.size() == NetworkConstants::kPrevSamples);
+  // Erase all but  NetworkConstants::kPrevSamples samples
+  testSamples.erase(std::begin(testSamples),
+                    std::end(testSamples) - NetworkConstants::kPrevSamples);
+  assert(testSamples.size() ==
+         static_cast<size_t>(NetworkConstants::kPrevSamples));
 
-    std::vector<float> predictedPrices;
+  std::vector<float> predictedPrices;
 
-    for (int64_t t = 0; t < N; ++t) {
-        const auto& nextClosingPriceTensor = *predict(testSamples);
-        float nextClosingPrice = m_minmaxScaler(nextClosingPriceTensor[0].item<float>());
-        predictedPrices.push_back(nextClosingPrice);
+  for (int64_t t = 0; t < N; ++t) {
+    const auto &nextClosingPriceTensor = predict(testSamples);
+    float nextClosingPrice = m_minmaxScaler(nextClosingPriceTensor[0]);
+    predictedPrices.push_back(nextClosingPrice);
 
-        // Prepare for next training set
-        testSamples.erase(testSamples.begin());
-        testSamples.push_back(nextClosingPrice);
+    // Prepare for next training set
+    testSamples.erase(testSamples.begin());
+    testSamples.push_back(nextClosingPrice);
 
-        assert(testSamples.size() == NetworkConstants::kPrevSamples);
-    }
+    assert(testSamples.size() ==
+           static_cast<size_t>(NetworkConstants::kPrevSamples));
+  }
 
-    assert(predictedPrices.size() == N);
+  assert(predictedPrices.size() == static_cast<size_t>(N));
 
-    // Fix Me !
-    fileLogger(m_stockSymbol + "_future.csv", std::get<2>(testData), predictedPrices);
+  // Fix Me !
+  fileLogger(m_stockSymbol + "_future.csv", std::get<2>(testData),
+             predictedPrices);
 }
 
 void StockPredictor::testModel() {
-  
+
   const std::string testPreditorLogFile = m_stockSymbol + "_test_pred.csv";
   const std::string testLogFile = m_stockSymbol + "_test.csv";
 
@@ -98,11 +104,11 @@ void StockPredictor::testModel() {
   if (m_lstmNetwork) {
     std::cout << "WEBREQUEST Calling forward on trained model for testset \n";
 
-    const auto& y_test_pred = predict(std::get<0>(testData));
+    const auto &y_test_pred = predict(std::get<0>(testData));
 
     std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
               << '\n';
-    fileLogger(testPreditorLogFile, allDates, *y_test_pred);
+    fileLogger(testPreditorLogFile, allDates, y_test_pred);
     fileLogger(testLogFile, allDates, std::get<1>(testData));
   } else {
     std::cout << "WEBREQUEST Cannnot predict data. \n";
@@ -113,41 +119,29 @@ StockPredictor::~StockPredictor() {}
 
 void StockPredictor::loadTimeSeries() {}
 
-std::shared_ptr<torch::Tensor> StockPredictor::predict(const std::vector<float>& input)
-{
-    
-    auto x_test = torch::tensor(input);
-    x_test = x_test.view({ NetworkConstants::kPrevSamples, -1, 1 });
-    x_test =
-        x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
-    auto pred = m_lstmNetwork->forward(x_test);
+std::vector<float> StockPredictor::predict(const std::vector<float> &input) {
 
-    return std::make_shared<torch::Tensor>(pred);
+  std::vector<float> result;
+  auto x_test = torch::tensor(input);
+  x_test = x_test.view({NetworkConstants::kPrevSamples, -1, 1});
+  x_test = x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+  auto pred = m_lstmNetwork->forward(x_test);
+  for (int64_t idx = 0; idx < pred.size(0); ++idx) {
+    result.push_back(pred[idx].item<float>());
+  }
+  return result;
 }
 
-void StockPredictor::fileLogger(const std::string & logFileName, const std::vector<std::string>& allDates, const torch::Tensor& y_test) const
-{
-    std::ofstream fileHandle(logFileName, std::ios::trunc);
-    fileHandle << "date,price\n";
-    if (fileHandle.good()) {
-        for (int64_t idx = 0; idx < y_test.size(0); ++idx) {
-            fileHandle << allDates.at(idx) << ","
-                << m_minmaxScaler(y_test[idx].item<float>()) << '\n';
-        }
+void StockPredictor::fileLogger(const std::string &logFileName,
+                                const std::vector<std::string> &allDates,
+                                const std::vector<float> &y_test) const {
+  std::ofstream fileHandle(logFileName, std::ios::trunc);
+  fileHandle << "date,price\n";
+  if (fileHandle.good()) {
+    for (size_t idx = 0; idx < y_test.size(); ++idx) {
+      fileHandle << allDates.at(idx) << "," << m_minmaxScaler(y_test[idx])
+                 << '\n';
     }
-
-    fileHandle.close();
-}
-
-void StockPredictor::fileLogger(const std::string & logFileName, const std::vector<std::string>& allDates, const std::vector<float>& y_test) const
-{
-    std::ofstream fileHandle(logFileName, std::ios::trunc);
-    fileHandle << "date,price\n";
-    if (fileHandle.good()) {
-        for (int64_t idx = 0; idx < y_test.size(); ++idx) {
-            fileHandle << allDates.at(idx) << ","
-                << m_minmaxScaler(y_test[idx]) << '\n';
-        }
-    }
-    fileHandle.close();
+  }
+  fileHandle.close();
 }

@@ -5,12 +5,12 @@
  *      Author: Prashant Srivastava
  */
 
-#include "StockLSTM.hpp"
 #include "NetworkTrainer.hpp"
 #include "NetworkConstants.hpp"
+#include "StockLSTM.hpp"
 #include "Timer.hpp"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include <torch/torch.h>
 
@@ -34,12 +34,12 @@ void logFullyTrainedModel(const std::string &modelName,
   fileHandle.close();
 }
 
-std::vector<float> extractData(torch::Tensor& tensorData) {
-    std::vector<float> result;
-    for (int64_t idx = 0; idx < tensorData.size(0); ++idx) {
-        result.push_back(tensorData[idx].item<float>());
-    }
-    return result;
+std::vector<float> extractData(torch::Tensor &tensorData) {
+  std::vector<float> result;
+  for (int64_t idx = 0; idx < tensorData.size(0); ++idx) {
+    result.push_back(tensorData[idx].item<float>());
+  }
+  return result;
 }
 } // namespace
 
@@ -80,8 +80,8 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
 
 NetworkTrainer::~NetworkTrainer() {}
 
-std::vector<float> NetworkTrainer::fit(const std::vector<float>& x_train, const std::vector<float>& y_train)
-{
+std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
+                                       const std::vector<float> &y_train) {
 
   torch::Tensor y_pred, input, target;
   torch::Tensor loss;
@@ -89,9 +89,9 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float>& x_train, const 
 
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
-    target = torch::tensor(x_train).to(torch::kCUDA);
+    target = torch::tensor(y_train).to(torch::kCUDA);
   } else {
-    target = torch::tensor(x_train);
+    target = torch::tensor(y_train);
   }
 
   float running_loss = 1, minimumLoss = 1;

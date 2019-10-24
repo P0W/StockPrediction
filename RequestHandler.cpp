@@ -19,8 +19,8 @@
 
 #include "RequestHandler.hpp"
 
-#include "StockPredictor.hpp"
 #include "NetworkConstants.hpp"
+#include "StockPredictor.hpp"
 
 namespace {
 namespace beast = boost::beast;   // from <boost/beast.hpp>

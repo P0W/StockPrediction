@@ -6,9 +6,9 @@
  */
 
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <thread>
-#include <iostream>
 
 #include "MinMaxScaler.hpp"
 #include "NetworkTrainer.hpp"
@@ -37,9 +37,9 @@ public:
     std::ofstream fileHandle(logFile, std::ios::trunc);
     fileHandle << "date,price\n";
     if (fileHandle.good()) {
-      for (int64_t idx = 0; idx < tensorData.size(); ++idx) {
-        fileHandle << allDates.at(idx) << ","
-                   << minMaxScaler(tensorData[idx]) << '\n';
+      for (size_t idx = 0; idx < tensorData.size(); ++idx) {
+        fileHandle << allDates.at(idx) << "," << minMaxScaler(tensorData[idx])
+                   << '\n';
       }
     }
     fileHandle.close();
@@ -100,8 +100,8 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
 
   auto trainData = stockData.getTrainData();
 
-  const auto& x_train = std::get<0>(trainData);
-  const auto& y_train = std::get<1>(trainData);
+  const auto &x_train = std::get<0>(trainData);
+  const auto &y_train = std::get<1>(trainData);
 
   // Record this stock for front end to update
   updateConfig(NetworkConstants::kRootFolder + "stock_train.csv", stockSymbol,
@@ -113,7 +113,7 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
   model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv",
                     y_train);
 
-  (void) model->fit(x_train, y_train);
+  (void)model->fit(x_train, y_train);
 
   return true;
 }
