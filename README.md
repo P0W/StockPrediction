@@ -11,7 +11,7 @@ _BITS Final Semester Project_
    
    c. libcurl (for linux only, usually comes installed)
    
-   d. [C++ Boost/Beast](https://github.com/boostorg/beast) Inspired by [this example](https://www.boost.org/doc/libs/develop/libs/beast/example/http/server/async/http_server_async.cpp). Requires date_time boost library.
+   d. [C++ Boost/Beast](https://github.com/boostorg/beast) Inspired by [this example](https://www.boost.org/doc/libs/develop/libs/beast/example/http/server/async/http_server_async.cpp). Requires date_time and regex boost library.
    
    d. Recommended:
   
