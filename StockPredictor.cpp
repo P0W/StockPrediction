@@ -60,7 +60,7 @@ void StockPredictor::predict(const int64_t N) {
   // N is the next future N days predictions
   // For predicting 1 sample we would need last N but
   // NetworkConstants::kPrevSamples samples
-  auto testData = m_stockPrices->getTestData();
+  auto testData = m_stockPrices->getTrainData();
   auto testSamples = std::get<0>(testData);
 
   // Erase all but  NetworkConstants::kPrevSamples samples
@@ -69,26 +69,24 @@ void StockPredictor::predict(const int64_t N) {
   assert(testSamples.size() ==
          static_cast<size_t>(NetworkConstants::kPrevSamples));
 
-  std::vector<float> predictedPrices;
+  std::vector<float> predictedNormalizedPrices;
 
   for (int64_t t = 0; t < N; ++t) {
-    const auto &nextClosingPriceTensor = predict(testSamples);
-    float nextClosingPrice = m_minmaxScaler(nextClosingPriceTensor[0]);
-    predictedPrices.push_back(nextClosingPrice);
+    const auto &nextClosingNormalizedPrices = predict(testSamples);
+
+    predictedNormalizedPrices.push_back(nextClosingNormalizedPrices[0]);
 
     // Prepare for next training set
     testSamples.erase(testSamples.begin());
-    testSamples.push_back(nextClosingPrice);
+    testSamples.push_back(nextClosingNormalizedPrices[0]);
 
     assert(testSamples.size() ==
            static_cast<size_t>(NetworkConstants::kPrevSamples));
   }
 
-  assert(predictedPrices.size() == static_cast<size_t>(N));
+  assert(predictedNormalizedPrices.size() == static_cast<size_t>(N));
 
-  // Fix Me !
-  fileLogger(m_stockSymbol + "_future.csv", std::get<2>(testData),
-             predictedPrices);
+  fileLogger(m_stockSymbol + "_future.csv", predictedNormalizedPrices);
 }
 
 void StockPredictor::testModel() {
@@ -96,20 +94,20 @@ void StockPredictor::testModel() {
   const std::string testPreditorLogFile = m_stockSymbol + "_test_pred.csv";
   const std::string testLogFile = m_stockSymbol + "_test.csv";
 
-  auto testData = m_stockPrices->getTestData();
+  const auto& testData = m_stockPrices->getTestData();
 
-  auto allDates = std::get<2>(testData);
+  const auto& x_test = std::get<0>(testData);
+  const auto& y_test = std::get<1>(testData);
+  const auto& allDates = std::get<2>(testData);
 
   // Predict the output using the neural network from test dataSet
   if (m_lstmNetwork) {
-    std::cout << "WEBREQUEST Calling forward on trained model for testset \n";
-
-    const auto &y_test_pred = predict(std::get<0>(testData));
+    const auto &y_test_pred = predict(x_test);
 
     std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
               << '\n';
-    fileLogger(testPreditorLogFile, allDates, y_test_pred);
-    fileLogger(testLogFile, allDates, std::get<1>(testData));
+    fileLogger(testPreditorLogFile, y_test_pred, allDates);
+    fileLogger(testLogFile, y_test, allDates);
   } else {
     std::cout << "WEBREQUEST Cannnot predict data. \n";
   }
@@ -133,14 +131,30 @@ std::vector<float> StockPredictor::predict(const std::vector<float> &input) {
 }
 
 void StockPredictor::fileLogger(const std::string &logFileName,
-                                const std::vector<std::string> &allDates,
-                                const std::vector<float> &y_test) const {
+                                const std::vector<float> &y_test,
+    const std::vector<std::string> &allDates) const {
   std::ofstream fileHandle(logFileName, std::ios::trunc);
-  fileHandle << "date,price\n";
+  if (!allDates.empty()) {
+      fileHandle << "date,price\n";
+  }
+  else {
+      fileHandle << "price\n";
+  }
   if (fileHandle.good()) {
     for (size_t idx = 0; idx < y_test.size(); ++idx) {
-      fileHandle << allDates.at(idx) << "," << m_minmaxScaler(y_test[idx])
-                 << '\n';
+        if (y_test[idx] >= 0.0 && y_test[idx] <= 1.0) {
+
+        }
+        else {
+            std::cout << "Wrong entry at : " << idx << " :" << y_test[idx] << '\n';
+        }
+        if (!allDates.empty()) {
+            fileHandle << allDates[idx] << "," 
+                << m_minmaxScaler(y_test[idx])
+                << '\n';
+        } else {
+            fileHandle << m_minmaxScaler(y_test[idx]) << '\n';
+        }
     }
   }
   fileHandle.close();

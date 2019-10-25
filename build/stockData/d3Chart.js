@@ -129,7 +129,7 @@ function dbClickHandler(data) {
       .attr("d", valueLine);
 }
 
-function setInitialDomain(newData) {
+function setDomain(newData) {
    x.domain(d3.extent(newData, function (d) {
       return d.date;
    }));
@@ -156,9 +156,6 @@ function resetDomain(newData) {
 }
 
 function setUpChart() {
-
-   setInitialDomain(stockData);
-
    // Add brushing
    // Add the brush feature using the d3.brush function
    // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
@@ -253,43 +250,61 @@ function joinAllStockData(newData) {
    });
 }
 
+function getLastDate() {
+   if (stockData !== null) {
+      return stockData[stockData.length - 1].date;
+   } else {
+      return new Date();
+   }
+}
+
+function showStockPrices(dataset, isPredicted) {
+   if (!isPredicted) {
+      stockData = [];
+      joinAllStockData(dataset);
+      setDomain(stockData);
+      setUpChart();
+      // Add the line
+      svg.select('.brush')
+         .append("path")
+         .datum(dataset)
+         .attr("class", "line originalStock")
+         .attr("d", valueLine);
+
+      // If user double click, reinitialize the chart
+      svg.on("dblclick", dbClickHandler.bind(this, stockData));
+
+   } else {
+      joinAllStockData(dataset);
+      setDomain(stockData);
+      // Add the line
+      svg.select('.brush')
+         .append("path")
+         .datum(dataset)
+         .attr("class", "line predictedStock")
+         .attr("d", valueLine);
+
+      // If user double click, reinitialize the chart
+      svg.on("dblclick", dbClickHandler.bind(this, stockData));
+   }
+}
+
 function plotStockPrice(fileName, isPredicted) {
 
-   //Read the data
-   d3.csv(fileName,
-      // When reading the csv, I must format variables:
-      function (d) {
-         return { date: d3.timeParse("%Y-%m-%d")(d.date), value: +d.price }
-      },
+   var promise = new Promise(resolve => {
+      //Read the data
+      d3.csv(fileName,
+         // When reading the csv, format variables:
+         function (d) {
+            return { date: d3.timeParse("%Y-%m-%d")(d.date), value: +d.price }
+         },
+         // Now I can use this dataset:
+         function (dataset) {
+            showStockPrices(dataset, isPredicted);
+            resolve('resolved');
+         });
+   });
 
-      // Now I can use this dataset:
-      function (dataset) {
-         if (!isPredicted) {
-            stockData = [];
-            joinAllStockData(dataset);
-            setUpChart();
-            // Add the line
-            svg.select('.brush')
-               .append("path")
-               .datum(dataset)
-               .attr("class", "line originalStock")
-               .attr("d", valueLine);
-
-            // If user double click, reinitialize the chart
-            svg.on("dblclick", dbClickHandler.bind(this, stockData));
-
-         } else {
-            joinAllStockData(dataset);
-            // Add the line
-            svg.select('.brush')
-               .append("path")
-               .datum(dataset)
-               .attr("class", "line predictedStock")
-               .attr("d", valueLine);
-
-            // If user double click, reinitialize the chart
-            svg.on("dblclick", dbClickHandler.bind(this, stockData));
-         }
-      });
+   return promise;
 }
 

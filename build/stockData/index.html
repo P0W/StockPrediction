@@ -14,7 +14,6 @@
         <button class="resetButton"> Reset</button>
     </head>
     <script>
-
         // Populate Drown Down from Fully Trained Model
         d3.csv('fullTrained.csv', function (d) {
             return {
@@ -48,7 +47,10 @@
                     fetch(url)
                         .then(response => response.text())
                         .then(contents => {
-                            updateGraph(o.value, o.text);
+                            updateGraph(o.value, o.text).then((msg) => {
+                                createFuturePrices(o.value);
+                            })
+
                         })
                         .catch(() => console.log("Can’t access " + url + " Blocked by browser?"))
 
@@ -70,8 +72,41 @@
             d3.select('h1')
                 .text(company);
             clearGraph();
-            plotStockPrice(stockSymbol + '_test.csv');
-            plotStockPrice(stockSymbol + '_test_pred.csv', true);
+            //plotStockPrice(stockSymbol + '_test.csv');
+            //plotStockPrice(stockSymbol + '_test_pred.csv', true);
+
+            return plotStockPrice(stockSymbol + '_train.csv');
+        }
+
+        function getNextDay(from, N) {
+            var nextDay = new Date(from);
+            nextDay.setDate(nextDay.getDate() + N);
+
+            return nextDay;
+        }
+
+        function createFuturePrices(stockSymbol) {
+
+            var futureDataSet = [];
+            //Read the data
+            d3.csv(stockSymbol + '_future.csv',
+                // When reading the csv, I must format variables:
+                function (d) {
+                    return { value: +d.price }
+                },
+
+                // Now I can use this dataset:
+                function (dataset) {
+                    var totalFuturePrices = dataset.length;
+                    var lastDate = getLastDate();
+                    dataset.forEach((element, index) => {
+                        futureDataSet.push({
+                            'date': getNextDay(lastDate, index),
+                            'value': element.value
+                        })
+                    });
+                    showStockPrices(futureDataSet, true);
+                });
         }
     </script>
 </body>

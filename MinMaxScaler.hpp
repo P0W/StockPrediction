@@ -19,8 +19,12 @@ public:
   MinMaxScaler &operator=(const MinMaxScaler &) = delete;
 
   std::vector<T> fit_transform(const std::vector<T> &rawData);
+  // vector inverse
   std::vector<T> inverse(const std::vector<T> &normalizedData) const;
+  // value inverse
   T operator()(const T &normalizedVal) const;
+  // value transform
+  T transform(const T& rawValue) const;
 
 private:
   T m_minVal;
@@ -74,5 +78,10 @@ template <typename T>
 T MinMaxScaler<T>::operator()(const T &normalizedVal) const {
   const T denominator = m_maxVal - m_minVal;
   return (normalizedVal * denominator) + m_minVal;
+}
+template<typename T>
+inline T MinMaxScaler<T>::transform(const T & rawValue) const {
+  const T denominator = m_maxVal - m_minVal;
+  return  (rawValue - m_minVal) / denominator;
 }
 #endif /* MINMAXSCALER_HPP_ */
