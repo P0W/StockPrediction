@@ -47,9 +47,11 @@
                     fetch(url)
                         .then(response => response.text())
                         .then(contents => {
-                            updateGraph(o.value, o.text).then((msg) => {
-                                createFuturePrices(o.value);
-                            })
+                            // updateGraph(o.value, o.text).then((msg) => {
+                            //     createFuturePrices(o.value);
+                            // });
+
+                            plotTestData(o.value);
 
                         })
                         .catch(() => console.log("Can’t access " + url + " Blocked by browser?"))
@@ -105,6 +107,7 @@
                             'value': element.value
                         })
                     });
+                    console.log(futureDataSet);
                     showStockPrices(futureDataSet, true);
                 });
         }

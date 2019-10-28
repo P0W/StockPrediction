@@ -168,7 +168,7 @@ void handle_request(beast::string_view doc_root,
              path.find("csv") == std::string::npos) {
     std::cout << "WEBREQUEST Loading Model " << path << '\n';
     stockRequest->loadModel(path);
-    stockRequest->predict(120);
+    stockRequest->testModel();
     path = path + "_test.csv";
   }
 

@@ -56,6 +56,7 @@ var valueLine = d3.line()
    .y(function (d) { return y(d.value) });
 
 var bisectDate = d3.bisector(function (d) { return d.date; }).left;
+var timeParser = d3.timeParse("%Y-%m-%d");
 
 // A function that set idleTimeOut to null
 var idleTimeout, chartArea, cursor, stockData = null;
@@ -291,12 +292,15 @@ function showStockPrices(dataset, isPredicted) {
 
 function plotStockPrice(fileName, isPredicted) {
 
-   var promise = new Promise(resolve => {
+   var promiseObj = new Promise(resolve => {
       //Read the data
       d3.csv(fileName,
          // When reading the csv, format variables:
          function (d) {
-            return { date: d3.timeParse("%Y-%m-%d")(d.date), value: +d.price }
+            return {
+               date: timeParser(d.date),
+               value: +d.price
+            };
          },
          // Now I can use this dataset:
          function (dataset) {
@@ -305,6 +309,42 @@ function plotStockPrice(fileName, isPredicted) {
          });
    });
 
-   return promise;
+   return promiseObj;
 }
 
+function plotTestData(stockSymbol) {
+   var promiseObj = new Promise(resolve => {
+      d3.csv(stockSymbol + '_test_pred.csv',
+         // When reading the csv, I must format variables:
+         function (d) {
+            return {
+               date: timeParser(d.date),
+               actual_value: +d.actual_price,
+               predicted_value: +d.price
+            };
+         },
+
+         // Now I can use this dataset:
+         function (dataset) {
+            var actualTestData = [];
+            var predictedTestData = [];
+            dataset.forEach(item => {
+               actualTestData.push({
+                  date: item.date,
+                  value: item.actual_value
+               });
+               predictedTestData.push({
+                  date: item.date,
+                  value: item.predicted_value
+               });
+            });
+
+            clearGraph();
+            showStockPrices(actualTestData);
+            showStockPrices(predictedTestData, true);
+            resolve('resolved');
+
+         });
+   });
+   return promiseObj;
+}
