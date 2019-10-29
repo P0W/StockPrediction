@@ -94,11 +94,11 @@ void StockPredictor::testModel() {
   const std::string testPreditorLogFile = m_stockSymbol + "_test_pred.csv";
   const std::string testLogFile = m_stockSymbol + "_test.csv";
 
-  const auto& testData = m_stockPrices->getTestData();
+  const auto &testData = m_stockPrices->getTestData();
 
-  const auto& x_test = std::get<0>(testData);
-  const auto& y_test = std::get<1>(testData);
-  const auto& allDates = std::get<2>(testData);
+  const auto &x_test = std::get<0>(testData);
+  const auto &y_test = std::get<1>(testData);
+  const auto &allDates = std::get<2>(testData);
 
   // Predict the output using the neural network from test dataSet
   if (m_lstmNetwork) {
@@ -107,7 +107,7 @@ void StockPredictor::testModel() {
     std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
               << '\n';
     fileLogger(testPreditorLogFile, y_test_pred, y_test, allDates);
-    //fileLogger(testLogFile, y_test, allDates);
+    // fileLogger(testLogFile, y_test, allDates);
   } else {
     std::cout << "WEBREQUEST Cannnot predict data. \n";
   }
@@ -130,33 +130,29 @@ std::vector<float> StockPredictor::predict(const std::vector<float> &input) {
   return result;
 }
 
-void StockPredictor::fileLogger(const std::string &logFileName,
-                                const std::vector<float> &y_test,
-                                const std::vector<float> &input,
+void StockPredictor::fileLogger(
+    const std::string &logFileName, const std::vector<float> &y_test,
+    const std::vector<float> &input,
     const std::vector<std::string> &allDates) const {
   std::ofstream fileHandle(logFileName, std::ios::trunc);
   if (!allDates.empty()) {
-      fileHandle << "date,price,actual_price\n";
-  }
-  else {
-      fileHandle << "price\n";
+    fileHandle << "date,price,actual_price\n";
+  } else {
+    fileHandle << "price\n";
   }
   if (fileHandle.good()) {
     for (size_t idx = 0; idx < y_test.size(); ++idx) {
-        if (y_test[idx] >= 0.0 && y_test[idx] <= 1.0) {
+      if (y_test[idx] >= 0.0 && y_test[idx] <= 1.0) {
 
-        }
-        else {
-            std::cout << "Wrong entry at : " << idx << " :" << y_test[idx] << '\n';
-        }
-        if (!allDates.empty()) {
-            fileHandle << allDates[idx] << "," 
-                << m_minmaxScaler(y_test[idx]) << ","
-                << m_minmaxScaler(input[idx])
-                << '\n';
-        } else {
-            fileHandle << m_minmaxScaler(y_test[idx]) << '\n';
-        }
+      } else {
+        std::cout << "Wrong entry at : " << idx << " :" << y_test[idx] << '\n';
+      }
+      if (!allDates.empty()) {
+        fileHandle << allDates[idx] << "," << m_minmaxScaler(y_test[idx]) << ","
+                   << m_minmaxScaler(input[idx]) << '\n';
+      } else {
+        fileHandle << m_minmaxScaler(y_test[idx]) << '\n';
+      }
     }
   }
   fileHandle.close();

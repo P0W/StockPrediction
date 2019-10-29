@@ -29,9 +29,9 @@ private:
   void loadTimeSeries();
   std::vector<float> predict(const std::vector<float> &input);
   void fileLogger(const std::string &logFileName,
-                  const std::vector<float> &y_test, 
-                  const std::vector<float> &input = {}, 
-      const std::vector<std::string> &allDates = {}) const;
+                  const std::vector<float> &y_test,
+                  const std::vector<float> &input = {},
+                  const std::vector<std::string> &allDates = {}) const;
   MinMaxScaler<float> m_minmaxScaler;
   std::shared_ptr<StockLSTM> m_lstmNetwork;
   std::shared_ptr<StockPrices> m_stockPrices;

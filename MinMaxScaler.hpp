@@ -24,7 +24,7 @@ public:
   // value inverse
   T operator()(const T &normalizedVal) const;
   // value transform
-  T transform(const T& rawValue) const;
+  T transform(const T &rawValue) const;
 
 private:
   T m_minVal;
@@ -79,9 +79,9 @@ T MinMaxScaler<T>::operator()(const T &normalizedVal) const {
   const T denominator = m_maxVal - m_minVal;
   return (normalizedVal * denominator) + m_minVal;
 }
-template<typename T>
-inline T MinMaxScaler<T>::transform(const T & rawValue) const {
+template <typename T>
+inline T MinMaxScaler<T>::transform(const T &rawValue) const {
   const T denominator = m_maxVal - m_minVal;
-  return  (rawValue - m_minVal) / denominator;
+  return (rawValue - m_minVal) / denominator;
 }
 #endif /* MINMAXSCALER_HPP_ */
