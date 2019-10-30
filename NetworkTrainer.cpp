@@ -65,7 +65,7 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
       .with_bias(NetworkConstants::kIncludeBias);
 
   torch::nn::LinearOptions linearOpts(hidden, output);
-  linearOpts.with_bias(false);
+  linearOpts.with_bias(true);
   lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
 
   torch::optim::AdamOptions opts(learningRate);
@@ -82,20 +82,32 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
 NetworkTrainer::~NetworkTrainer() {}
 
 std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
-                                       const std::vector<float> &y_train) {
+                                       const std::vector<float> &y_train,
+    const std::vector<float> &x_test,
+    const std::vector<float> &y_test) {
 
-  torch::Tensor y_pred, input, target;
+  torch::Tensor y_pred, input, target, input_test, target_test;
   torch::Tensor loss;
-  input = torch::tensor(x_train).view({prevSamples, -1, 1});
 
+  bool noValidateDataSet = x_test.empty() && y_test.empty();
+  bool saveFlag = false;
+  input = torch::tensor(x_train).view({prevSamples, -1, 1});
+  target = torch::tensor(y_train);
+
+  if (!noValidateDataSet) {
+      input_test = torch::tensor(x_test).view({ prevSamples, -1, 1 });
+      target_test = torch::tensor(y_test);
+  }
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
-    target = torch::tensor(y_train).to(torch::kCUDA);
-  } else {
-    target = torch::tensor(y_train);
+    target = target.to(torch::kCUDA);
+    if (!noValidateDataSet) {
+        input_test = input_test.to(torch::kCUDA);
+        target_test = target_test.to(torch::kCUDA);
+    }
   }
 
-  float running_loss = 1, minimumLoss = 1;
+  float running_loss = 1, minimumLoss = 1, training_loss = 1;
   int64_t epoch = 0;
   input.set_requires_grad(true);
 
@@ -147,13 +159,30 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
 #else
       lbfgsOptimizer->step(closure);
 #endif
-
-    running_loss = loss.item<float>();
-    // Save model and write the predicted tensor
-    if (minimumLoss > running_loss) {
-      saveModel(neuralNetLogFile);
-      dataWriter(predictLogFile, extractData(y_pred));
-      minimumLoss = running_loss;
+      training_loss = loss.item<float>();
+      if (noValidateDataSet) {
+          running_loss = loss.item<float>();
+          // Save model and write the predicted tensor
+          if (minimumLoss > running_loss) {
+              saveModel(neuralNetLogFile);
+              dataWriter(predictLogFile, extractData(y_pred));
+              minimumLoss = running_loss;
+          }
+      }
+      else 
+     {
+       // Validate and save model
+        torch::NoGradGuard nograd;
+        auto validateOut = lstmNetwork->forward(input_test);
+        auto validateLoss = torch::mse_loss(validateOut, target_test);
+        running_loss = validateLoss.item<float>();
+        saveFlag = false;
+        if (minimumLoss > running_loss) {
+            saveModel(neuralNetLogFile);
+            dataWriter(predictLogFile, extractData(y_pred));
+            minimumLoss = running_loss;
+            saveFlag = true;
+        }
     }
     if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
@@ -167,10 +196,12 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       return extractData(y_pred.detach());
     }
 
-    else if (epoch % 10 == 0) {
-      t2.show(false);
-      std::cout << " epoch " << epoch << " [Loss = " << running_loss << " ( "
-                << companyName << " ) ]\n";
+    else if (epoch % 10 == 0 || saveFlag) {
+        t2.show(false);
+        std::cout << " epoch " << epoch << " [Traing Loss = " << training_loss
+            << " Validation Loss = " << running_loss
+            << " ( "
+            << companyName << " ) ]" << ((saveFlag) ? "(**best**)\n" : "\n");
     }
     epoch++;
   }
