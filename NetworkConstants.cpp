@@ -11,7 +11,7 @@ const int64_t NetworkConstants::kPrevSamples = 5;
 const int64_t NetworkConstants::kMaxEpochs = 1e4;
 const double NetworkConstants::kMaxTrainTime = 900.0; // seconds
 const float NetworkConstants::kLearningRate = 1e-2;
-const double NetworkConstants::kMinimumLoss = 2e-4;
+const double NetworkConstants::kMinimumLoss = 1e-4;
 const float NetworkConstants::kSplitRatio = 0.01;
 const bool NetworkConstants::kIncludeBias = false;
 

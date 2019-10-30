@@ -185,8 +185,8 @@ bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
 void StockPrices::reshapeSeries(float testSplitRatio,
                                 int64_t num_prev_samples) {
   int64_t dataSet_size = normalizedStockClosePrices.size();
-  int64_t test_size = static_cast<int64_t>(dataSet_size * testSplitRatio);
-  int64_t trainSize = dataSet_size - test_size;
+  int64_t testSize = static_cast<int64_t>(dataSet_size * testSplitRatio);
+  int64_t trainSize = dataSet_size - testSize;
 
   int64_t idx, xIdx;
 
@@ -207,22 +207,24 @@ void StockPrices::reshapeSeries(float testSplitRatio,
 
   assert(dates_train.size() == y_train.size());
 
+  auto startIndx = trainSize - num_prev_samples;
   // Test Data Set
-  for (idx = trainSize + num_prev_samples; idx < dataSet_size; ++idx) {
+  for (idx = num_prev_samples; idx < testSize + num_prev_samples; ++idx) {
     for (xIdx = idx - num_prev_samples; xIdx < idx; ++xIdx) {
-      x_test.push_back(normalizedStockClosePrices[xIdx]);
+      x_test.push_back(normalizedStockClosePrices[startIndx + xIdx]);
     }
 
-    y_test.push_back(normalizedStockClosePrices[idx]);
+    y_test.push_back(normalizedStockClosePrices[startIndx + idx]);
   }
 
   // Adjust dates, strip off first num_prev_samples
   dates_test.reserve(y_test.size());
-  std::copy(std::cbegin(dates) + trainSize + num_prev_samples, std::cend(dates),
+  std::copy(std::cbegin(dates) + startIndx + num_prev_samples, std::cend(dates),
             std::back_inserter(dates_test));
 
+  assert(testSize == static_cast<int64_t>(y_test.size()));
   assert(dates_test.size() == y_test.size());
-  assert(normalizedStockClosePrices.size() - 2 * num_prev_samples ==
+  assert(normalizedStockClosePrices.size() - num_prev_samples ==
          y_test.size() + y_train.size());
 }
 

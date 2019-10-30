@@ -169,7 +169,7 @@ void handle_request(beast::string_view doc_root,
     std::cout << "WEBREQUEST Loading Model " << path << '\n';
     stockRequest->loadModel(path);
     stockRequest->testModel();
-    path = path + "_test.csv";
+    path = path + "_test_pred.csv";
   }
 
   // Attempt to open the file

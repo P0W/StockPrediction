@@ -69,6 +69,7 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
   lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
 
   torch::optim::AdamOptions opts(learningRate);
+
   optimizer = std::make_shared<torch::optim::Adam>(
       torch::optim::Adam(lstmNetwork->parameters(), opts));
 
@@ -116,7 +117,19 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     }
   }
 
+ torch::optim::LBFGSOptions lbfgs(NetworkConstants::kLearningRate);
+ auto lbfgsOptimizer = std::make_shared<torch::optim::LBFGS>(torch::optim::LBFGS(lstmNetwork->parameters(), lbfgs));
+
+ auto closure = [this, &lbfgsOptimizer, &y_pred, &loss, &input, &target]() {
+      lbfgsOptimizer->zero_grad();
+      y_pred = lstmNetwork->forward(input);
+      loss = torch::mse_loss(y_pred, target);
+      loss.backward();
+      return loss;
+  };
+
   while (running_loss > kRunningLoss) {
+#ifndef TEST
     // Zero out the gradients
     optimizer->zero_grad();
 
@@ -131,9 +144,11 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
 
     // Step the optimizer
     optimizer->step();
+#else
+      lbfgsOptimizer->step(closure);
+#endif
 
     running_loss = loss.item<float>();
-
     // Save model and write the predicted tensor
     if (minimumLoss > running_loss) {
       saveModel(neuralNetLogFile);
@@ -143,13 +158,13 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
                 << minimumLoss << std::endl;
-      return extractData(y_pred);
+      return extractData(y_pred.detach());
     }
 
     else if (running_loss < NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
       logFullyTrainedModel(modelName, companyName, running_loss, epoch, t2);
-      return extractData(y_pred);
+      return extractData(y_pred.detach());
     }
 
     else if (epoch % 10 == 0) {
@@ -160,7 +175,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     epoch++;
   }
 
-  return extractData(y_pred);
+  return extractData(y_pred.detach());
 }
 
 void NetworkTrainer::saveModel(const std::string &fileName) const {

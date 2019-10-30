@@ -124,18 +124,27 @@ int main(int argc, char **argv) {
   if (argc == 2) {
     std::string stockParam = argv[1];
     bool testingMode = false;
+    bool singleTraining = false;
     if (stockParam.find("testMode") != std::string::npos) {
       testingMode = true;
+      singleTraining = false;
+    } else if (stockParam.find("trainMode") != std::string::npos) {
+        testingMode = false;
+        singleTraining = false;
+    }
+    else if (stockParam.find("BOM") != std::string::npos) {
+        testingMode = false;
+        singleTraining = true;
     }
 
-    if (testingMode) {
+    if (testingMode && !singleTraining) {
       RequestHandler reqHandler;
       reqHandler.setupService(std::make_shared<StockPredictor>());
 
       std::thread t([&reqHandler]() { reqHandler.run(); });
       t.join();
       return 0;
-    } else {
+    } else if (!testingMode && !singleTraining) {
       std::cout << "Missing Stock Symbol...reading top 100 BSE stocks\n";
       const std::string bse100File =
           NetworkConstants::kRootFolder + "BSE100.csv";
@@ -161,10 +170,13 @@ int main(int argc, char **argv) {
           flag = true;
         }
       }
+    } else {
+        (void)NetworkTrainerFacade(argv[1]);
     }
   } else {
-    (void)NetworkTrainerFacade(argv[1]);
+      std::cout << "\nUsage :"
+          << argv[0] << "testMode | trainMode | BSEStockSymbol\n";
   }
-
+  
   return 0;
 }

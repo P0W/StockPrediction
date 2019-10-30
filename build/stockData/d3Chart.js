@@ -62,6 +62,11 @@ var timeParser = d3.timeParse("%Y-%m-%d");
 var idleTimeout, chartArea, cursor, stockData = null;
 function idled() { idleTimeout = null; }
 
+// Create the line variable: where both the line and the brush take place
+chartArea = svg.append('g')
+   .attr("clip-path", "url(#clip)")
+   .append("g")
+   .attr("class", "brush");
 
 function clearGraph() {
    svg.selectAll("path").remove();
@@ -166,11 +171,7 @@ function setUpChart() {
    d3.select("button")
       .on("click", resetted);
 
-   // Create the line variable: where both the line and the brush take place
-   chartArea = svg.append('g')
-      .attr("clip-path", "url(#clip)")
-      .append("g")
-      .attr("class", "brush")
+   chartArea
       .call(brush)
       .call(zoom);
 
@@ -340,11 +341,40 @@ function plotTestData(stockSymbol) {
             });
 
             clearGraph();
-            showStockPrices(actualTestData);
-            showStockPrices(predictedTestData, true);
+            showpredictions(actualTestData, predictedTestData);
             resolve('resolved');
 
          });
    });
    return promiseObj;
+}
+
+function showpredictions(actual, predicted) {
+   stockData = [];
+   joinAllStockData(actual);
+   joinAllStockData(predicted);
+
+   stockData = actual.concat(predicted);
+   stockData.sort((a,b) => {
+      return a.date - b.date;
+   })
+   setDomain(stockData);
+   //resetDomain(predicted);
+
+   // Add the line
+   svg.select('.brush')
+      .append("path")
+      .datum(actual)
+      .attr("class", "line originalStock")
+      .attr("d", valueLine);
+
+
+   // Add the line
+   svg.select('.brush')
+      .append("path")
+      .datum(predicted)
+      .attr("class", "line predictedStock")
+      .attr("d", valueLine);
+
+   setUpChart();
 }

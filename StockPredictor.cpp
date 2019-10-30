@@ -100,9 +100,19 @@ void StockPredictor::testModel() {
   const auto &y_test = std::get<1>(testData);
   const auto &allDates = std::get<2>(testData);
 
+  std::ofstream fileHandle(testLogFile);
+  fileHandle << "Close, Price\n";
+  std::transform(std::cbegin(y_test), std::cend(y_test), std::cbegin(allDates),
+      std::ostream_iterator<std::string>(fileHandle, "\n"),
+      [](const auto& price, const auto& date) {
+      return   std::string(date) + std::string(",") + std::to_string(price);
+  }
+  );
+  fileHandle.close();
+
   // Predict the output using the neural network from test dataSet
   if (m_lstmNetwork) {
-    const auto &y_test_pred = predict(x_test);
+    const auto &y_test_pred = predict(x_test, y_test);
 
     std::cout << "WEBREQUEST Writing test dataset to " << testPreditorLogFile
               << '\n';
@@ -117,13 +127,25 @@ StockPredictor::~StockPredictor() {}
 
 void StockPredictor::loadTimeSeries() {}
 
-std::vector<float> StockPredictor::predict(const std::vector<float> &input) {
+std::vector<float> StockPredictor::predict(const std::vector<float> &input, const std::vector<float>& expectedOuput) {
 
   std::vector<float> result;
   auto x_test = torch::tensor(input);
   x_test = x_test.view({NetworkConstants::kPrevSamples, -1, 1});
   x_test = x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
-  auto pred = m_lstmNetwork->forward(x_test);
+  torch::Tensor pred;
+  float deviation = 1.0;
+  {
+      torch::NoGradGuard no_grad;
+      pred = m_lstmNetwork->forward(x_test);
+      if (!expectedOuput.empty()) {
+          auto target = torch::tensor(expectedOuput).to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+          auto loss = torch::mse_loss(pred, target);
+          deviation = loss.item<float>();
+          std::cout << "WEBREQUEST Prediction Loss: " << deviation << '\n';
+      }
+      pred = pred.detach();
+  }
   for (int64_t idx = 0; idx < pred.size(0); ++idx) {
     result.push_back(pred[idx].item<float>());
   }
