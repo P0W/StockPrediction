@@ -89,6 +89,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
 
   bool noValidateDataSet = x_test.empty() && y_test.empty();
   bool saveFlag = false;
+  bool iValidatedGood = false;
   input = torch::tensor(x_train).view({prevSamples, -1, 1});
   target = torch::tensor(y_train);
 
@@ -143,6 +144,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   };
 #endif
   while (running_loss > kRunningLoss) {
+    lstmNetwork->train();
 #ifndef USELBFGS
     // Zero out the gradients
     optimizer->zero_grad();
@@ -175,6 +177,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     } else {
       // Validate and save model
       torch::NoGradGuard nograd;
+      lstmNetwork->eval();
       accumulated_loss = 0.0;
       for (int64_t idx = 0; idx < input_test.size(1); ++idx) {
           const auto& slicedTensor = input_test.slice(1, idx, idx + 1);
@@ -192,7 +195,18 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
         dataWriter(predictLogFile, extractData(y_pred));
         minimumLoss = running_loss;
         saveFlag = true;
+        iValidatedGood = true;
       }
+      
+      if (!saveFlag && (minimumLoss > training_loss)) {
+          // Then also save model ... we don't want to discard good training
+          saveModel(neuralNetLogFile);
+          dataWriter(predictLogFile, extractData(y_pred));
+          minimumLoss = training_loss;
+          saveFlag = true;
+          iValidatedGood = false;
+      }
+      lstmNetwork->train();
     }
     if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
@@ -209,8 +223,9 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     else if (epoch % 50 == 0 || saveFlag) {
       t2.show(false);
       std::cout << " epoch " << epoch << " [Traing Loss = " << training_loss
-                << " Validation Loss = " << running_loss << " ( "<< companyName
-                << " ) ]" << ((saveFlag) ? "(**best**)\n" : "\n");
+          << " Validation Loss = " << running_loss << " ( " << companyName
+          << " ) ]" << ((saveFlag) ? "(**best " : "")
+          << ((saveFlag && iValidatedGood) ? " validation**)\n" : (saveFlag && !iValidatedGood) ? " training**)\n" : "\n");
     }
     epoch++;
   }

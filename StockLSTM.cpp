@@ -136,7 +136,7 @@ torch::Tensor StockLSTM::forward(const torch::Tensor &input) {
   torch::nn::RNNOutput lstm_out = this->lstm1->forward(input);
 
   // std::cout << lstm_out.output.sizes() << '\n';  //[5, 3616, 64]
-  lstm_out = this->lstm2->forward(lstm_out.output);
+  lstm_out = this->lstm2->forward(lstm_out.output, lstm_out.state);
 
   // std::cout << lstm_out.output.sizes() << '\n';  // same as above [5,
   // 3616,64] std::cout << lstm_out.output[-1].sizes() << '\n';  //[ 3616, 64 ]
@@ -147,7 +147,7 @@ torch::Tensor StockLSTM::forward(const torch::Tensor &input) {
   const auto& maxTensor = lstm_out.output[-1]; // std::get<0>(maxTensorTuple);
   // std::cout << lstm_out.output[-1].sizes() << '\n';
   // std::cout << "temp.sizes()" << std::get<0>(temp).sizes();
-  torch::Tensor y_pred = this->linear(maxTensor);
+  torch::Tensor y_pred = this->linear->forward(maxTensor);
   //std::get<0>(
     //  maxTensor)); // 0 is the max values, 1 is the indices of max values
   // std::cout << y_pred.sizes() << '\n';             //[3616,1]
