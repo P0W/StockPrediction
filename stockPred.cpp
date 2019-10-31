@@ -99,13 +99,13 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
                           NetworkConstants::kPrevSamples);
 
   auto trainData = stockData.getTrainData();
-  //auto testData = stockData.getTestData();
+  auto testData = stockData.getTestData();
 
   const auto &x_train = std::get<0>(trainData);
   const auto &y_train = std::get<1>(trainData);
 
-  //const auto &x_test = std::get<0>(testData);
-  //const auto &y_test = std::get<1>(testData);
+  const auto &x_test = std::get<0>(testData);
+  const auto &y_test = std::get<1>(testData);
 
   // Record this stock for front end to update
   updateConfig(NetworkConstants::kRootFolder + "stock_train.csv", stockSymbol,
@@ -117,7 +117,7 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
   model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv",
                     y_train);
 
-  (void)model->fit(x_train, y_train);
+  (void)model->fit(x_train, y_train, x_test, y_test);
 
   return true;
 }
