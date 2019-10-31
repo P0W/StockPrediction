@@ -69,7 +69,6 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
   lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
 
   torch::optim::AdamOptions opts(learningRate);
-
   optimizer = std::make_shared<torch::optim::Adam>(
       torch::optim::Adam(lstmNetwork->parameters(), opts));
 
@@ -106,7 +105,10 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     }
   }
 
-  float running_loss = 1, minimumLoss = 1, training_loss = 1;
+  float running_loss = std::numeric_limits<float>::infinity(), 
+      minimumLoss = std::numeric_limits<float>::infinity(), 
+      training_loss = std::numeric_limits<float>::infinity(),
+      accumulated_loss = 0.0;
   int64_t epoch = 0;
   input.set_requires_grad(true);
 
@@ -123,16 +125,15 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       loadModel(neuralNetLogFile);
       std::cout << "Loaded a existing trained model " << neuralNetLogFile
                 << "\n";
+      std::cout << *lstmNetwork << std::endl;
     } catch (...) {
       std::cout << "Starting a fresh training...\n";
     }
   }
-
+#ifdef USELBFGS
   torch::optim::LBFGSOptions lbfgs(NetworkConstants::kLearningRate);
   auto lbfgsOptimizer = std::make_shared<torch::optim::LBFGS>(
       torch::optim::LBFGS(lstmNetwork->parameters(), lbfgs));
-
-#ifdef TEST
   auto closure = [this, &lbfgsOptimizer, &y_pred, &loss, &input, &target]() {
     lbfgsOptimizer->zero_grad();
     y_pred = lstmNetwork->forward(input);
@@ -142,7 +143,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   };
 #endif
   while (running_loss > kRunningLoss) {
-#ifndef TEST
+#ifndef USELBFGS
     // Zero out the gradients
     optimizer->zero_grad();
 
@@ -174,9 +175,17 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     } else {
       // Validate and save model
       torch::NoGradGuard nograd;
-      auto validateOut = lstmNetwork->forward(input_test);
-      auto validateLoss = torch::mse_loss(validateOut, target_test);
-      running_loss = validateLoss.item<float>();
+      accumulated_loss = 0.0;
+      for (int64_t idx = 0; idx < input_test.size(1); ++idx) {
+          const auto& slicedTensor = input_test.slice(1, idx, idx + 1);
+          const auto& slicedTargetTensor = target_test.slice(0, idx, idx+1);
+          auto validateOut = lstmNetwork->forward(slicedTensor);
+          auto validateLoss = torch::mse_loss(validateOut, slicedTargetTensor);
+          accumulated_loss += validateLoss.item<float>();
+      }
+      //auto validateOut = lstmNetwork->forward(input_test);
+      //auto validateLoss = torch::mse_loss(validateOut, target_test);
+      running_loss = accumulated_loss;
       saveFlag = false;
       if (minimumLoss > running_loss) {
         saveModel(neuralNetLogFile);

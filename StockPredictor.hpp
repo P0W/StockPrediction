@@ -22,7 +22,7 @@ public:
 
   void loadModel(const std::string &stockSymbol);
   void predict(const int64_t N);
-  void testModel();
+  void testModel(const std::string& args);
   virtual ~StockPredictor();
 
 private:

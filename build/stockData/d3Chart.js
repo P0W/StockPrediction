@@ -1,3 +1,7 @@
+/*
+* Prashant Srivastava
+* Dated: October 22nd, 2019.
+*/
 // set the dimensions and margins of the graph
 var margin = { top: 10, right: 30, bottom: 30, left: 60 },
    width = 850 - margin.left - margin.right,
@@ -59,7 +63,7 @@ var bisectDate = d3.bisector(function (d) { return d.date; }).left;
 var timeParser = d3.timeParse("%Y-%m-%d");
 
 // A function that set idleTimeOut to null
-var idleTimeout, chartArea, cursor, stockData = null;
+var idleTimeout, chartArea, cursor, stockData = null, currentSelectedStock;
 function idled() { idleTimeout = null; }
 
 // Create the line variable: where both the line and the brush take place
@@ -69,6 +73,10 @@ chartArea = svg.append('g')
    .attr("class", "brush");
 
 function clearGraph() {
+   x.domain([0, 0]);
+   y.domain([0, 0]);
+   xAxis.call(xScale);
+   yAxis.call(yScale);
    svg.selectAll("path").remove();
 }
 
@@ -168,7 +176,7 @@ function setUpChart() {
    brush.on("end", updateChart);// Each time the brush selection changes, trigger the 'updateChart' function
 
 
-   d3.select("button")
+   d3.select("#ResetButton")
       .on("click", resetted);
 
    chartArea
@@ -260,57 +268,38 @@ function getLastDate() {
    }
 }
 
-function showStockPrices(dataset, isPredicted) {
-   if (!isPredicted) {
-      stockData = [];
-      joinAllStockData(dataset);
-      setDomain(stockData);
-      setUpChart();
-      // Add the line
+function showpredictions(actual, predicted) {
+   stockData = [];
+   joinAllStockData(actual);
+
+   if (typeof predicted !== 'undefined') {
+      joinAllStockData(predicted);
+      stockData = actual.concat(predicted);
+   }
+
+   stockData.sort((a, b) => {
+      return a.date - b.date;
+   })
+   setDomain(stockData);
+   //resetDomain(predicted);
+
+   // Add the line
+   svg.select('.brush')
+      .append("path")
+      .datum(actual)
+      .attr("class", "line originalStock")
+      .attr("d", valueLine);
+
+
+   // Add the line
+   if (typeof predicted !== 'undefined') {
       svg.select('.brush')
          .append("path")
-         .datum(dataset)
-         .attr("class", "line originalStock")
-         .attr("d", valueLine);
-
-      // If user double click, reinitialize the chart
-      svg.on("dblclick", dbClickHandler.bind(this, stockData));
-
-   } else {
-      joinAllStockData(dataset);
-      setDomain(stockData);
-      // Add the line
-      svg.select('.brush')
-         .append("path")
-         .datum(dataset)
+         .datum(predicted)
          .attr("class", "line predictedStock")
          .attr("d", valueLine);
-
-      // If user double click, reinitialize the chart
-      svg.on("dblclick", dbClickHandler.bind(this, stockData));
    }
-}
-
-function plotStockPrice(fileName, isPredicted) {
-
-   var promiseObj = new Promise(resolve => {
-      //Read the data
-      d3.csv(fileName,
-         // When reading the csv, format variables:
-         function (d) {
-            return {
-               date: timeParser(d.date),
-               value: +d.price
-            };
-         },
-         // Now I can use this dataset:
-         function (dataset) {
-            showStockPrices(dataset, isPredicted);
-            resolve('resolved');
-         });
-   });
-
-   return promiseObj;
+   setUpChart();
 }
 
 function plotTestData(stockSymbol) {
@@ -349,32 +338,52 @@ function plotTestData(stockSymbol) {
    return promiseObj;
 }
 
-function showpredictions(actual, predicted) {
-   stockData = [];
-   joinAllStockData(actual);
-   joinAllStockData(predicted);
+function setSelectedvalue(selectedStock) {
+   currentSelectedStock = selectedStock;
+}
 
-   stockData = actual.concat(predicted);
-   stockData.sort((a,b) => {
-      return a.date - b.date;
-   })
-   setDomain(stockData);
-   //resetDomain(predicted);
+function fetchData(args) {
+   var url = "http://localhost:4242/stockData/" + currentSelectedStock.value + "?" + args;
+   fetch(url)
+      .then(response => response.text())
+      .then(contents => {
+         console.log(contents);
+         if (args === 'testData' || args === 'trainData') {
+            plotTestData(currentSelectedStock.value);
+         } else {
+            createFuturePrices(currentSelectedStock.value);
+         }
+         d3.select("#loader").style('display', 'none');
+      })
+      .catch(() => console.log("Cannot access " + url + " Blocked by browser ?"));
+}
 
-   // Add the line
-   svg.select('.brush')
-      .append("path")
-      .datum(actual)
-      .attr("class", "line originalStock")
-      .attr("d", valueLine);
+function getNextDay(from, N) {
+   var nextDay = new Date(from);
+   nextDay.setDate(nextDay.getDate() + N);
+   return nextDay;
+}
 
+function createFuturePrices(stockSymbol) {
 
-   // Add the line
-   svg.select('.brush')
-      .append("path")
-      .datum(predicted)
-      .attr("class", "line predictedStock")
-      .attr("d", valueLine);
-
-   setUpChart();
+   var futureDataSet = [];
+   //Read the data
+   d3.csv(stockSymbol + '_future.csv',
+      // When reading the csv, I must format variables:
+      function (d) {
+         return { value: +d.price }
+      },
+      // Now I can use this dataset:
+      function (dataset) {
+         var lastDate = getLastDate();
+         dataset.forEach((element, index) => {
+            futureDataSet.push({
+               'date': getNextDay(lastDate, index),
+               'value': element.value
+            })
+         });
+         clearGraph();
+         showpredictions(futureDataSet);
+         setUpChart();
+      });
 }

@@ -9,9 +9,41 @@
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src="d3Chart.js"></script>
         <link rel="stylesheet" type="text/css" href="stock.css">
+        <div id="loader"></div>
+        <div id="SelectorContainer">
+            <div class="row">
+                <div class="column">
+                    <div id="StockSelect" class="StockSelect">Select Company: </div>
+                </div>
+                <div class="column">
+                    <button class="button" id="ResetButton"> Reset</button>
+                </div>
+            </div>
+        </div>
 
-        <div id="StockSelect"></div>
-        <button class="resetButton"> Reset</button>
+        <div id="PrecitorContainer">
+            <div class="row">
+                <div class="column">
+                    <button class="button" id="TrainedData"> Show Trained Data</button>
+                </div>
+                <div class="column">
+                    <button class="button" id="TestData"> Show Test Data</button>
+                </div>
+
+                <div class="column">
+                    <div class="StockSelect">
+                        Predict For Days:
+                        <select id="PredictDays">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </head>
     <script>
         // Populate Drown Down from Fully Trained Model
@@ -34,28 +66,28 @@
                 'symbol': 'DontSelect',
                 'company': '---'
             });
+
+            d3.select('#PredictDays')
+                .on('change', function () {
+                    var days = d3.select('#PredictDays').node().value;
+                    d3.select("#loader").style('display', 'block');
+                    fetchData(days);
+                });
+
+
             d3.select("#StockSelect")
                 .append("select")
                 .on('change', function () {
                     var o = this.options[this.selectedIndex];
                     if (o.value === 'DontSelect') {
+                        d3.select("#PrecitorContainer").style('display', 'none');
                         return;
                     }
                     d3.select('h1')
                         .text(o.text);
-                    var url = "http://localhost:4242/stockData/" + o.value;
-                    fetch(url)
-                        .then(response => response.text())
-                        .then(contents => {
-                            // updateGraph(o.value, o.text).then((msg) => {
-                            //     createFuturePrices(o.value);
-                            // });
-                            console.log(contents);
-                            plotTestData(o.value);
-
-                        })
-                        .catch(() => console.log("Can’t access " + url + " Blocked by browser?"))
-
+                    setSelectedvalue(o);
+                    clearGraph();
+                    d3.select("#PrecitorContainer").style('display', 'block');
                 })
                 .selectAll("option").data(data)
                 .enter().append("option")
@@ -68,49 +100,18 @@
 
             // Initial Value
             d3.select('select').property('value', 'DontSelect');
-        });
-
-        function updateGraph(stockSymbol, company) {
-            d3.select('h1')
-                .text(company);
-            clearGraph();
-            //plotStockPrice(stockSymbol + '_test.csv');
-            //plotStockPrice(stockSymbol + '_test_pred.csv', true);
-
-            return plotStockPrice(stockSymbol + '_train.csv');
-        }
-
-        function getNextDay(from, N) {
-            var nextDay = new Date(from);
-            nextDay.setDate(nextDay.getDate() + N);
-
-            return nextDay;
-        }
-
-        function createFuturePrices(stockSymbol) {
-
-            var futureDataSet = [];
-            //Read the data
-            d3.csv(stockSymbol + '_future.csv',
-                // When reading the csv, I must format variables:
-                function (d) {
-                    return { value: +d.price }
-                },
-
-                // Now I can use this dataset:
-                function (dataset) {
-                    var totalFuturePrices = dataset.length;
-                    var lastDate = getLastDate();
-                    dataset.forEach((element, index) => {
-                        futureDataSet.push({
-                            'date': getNextDay(lastDate, index),
-                            'value': element.value
-                        })
-                    });
-                    console.log(futureDataSet);
-                    showStockPrices(futureDataSet, true);
+            d3.select('#TrainedData')
+                .on('click', function () {
+                    d3.select("#loader").style('display', 'block');
+                    fetchData('trainData');
                 });
-        }
+
+            d3.select('#TestData')
+                .on('click', function () {
+                    d3.select("#loader").style('display', 'block');
+                    fetchData('testData');
+                });
+        });
     </script>
 </body>
 

@@ -89,16 +89,30 @@ void StockPredictor::predict(const int64_t N) {
   fileLogger(m_stockSymbol + "_future.csv", predictedNormalizedPrices);
 }
 
-void StockPredictor::testModel() {
+void StockPredictor::testModel(const std::string& args) {
 
   const std::string testPreditorLogFile = m_stockSymbol + "_test_pred.csv";
   const std::string testLogFile = m_stockSymbol + "_test.csv";
+  int64_t days = -1;
+  bool grabTrainData = false;
+  try {
+      days = std::stoi(args);
+  }
+  catch (...){
+      days = -1;
+  }
+  if (days != -1) {
+      predict(days);
+      return;
+  }
+  if (args.compare("trainData") == 0) {
+      grabTrainData = true;
+  }
+  const auto &dataSet = (grabTrainData) ? m_stockPrices->getTrainData() : m_stockPrices->getTestData();
 
-  const auto &testData = m_stockPrices->getTestData();
-
-  const auto &x_test = std::get<0>(testData);
-  const auto &y_test = std::get<1>(testData);
-  const auto &allDates = std::get<2>(testData);
+  const auto &x_test = std::get<0>(dataSet);
+  const auto &y_test = std::get<1>(dataSet);
+  const auto &allDates = std::get<2>(dataSet);
 
   std::ofstream fileHandle(testLogFile);
   fileHandle << "Close, Price\n";
@@ -137,6 +151,7 @@ StockPredictor::predict(const std::vector<float> &input,
   x_test = x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
   torch::Tensor pred;
   float deviation = 1.0;
+  m_lstmNetwork->eval();
   {
     torch::NoGradGuard no_grad;
     pred = m_lstmNetwork->forward(x_test);

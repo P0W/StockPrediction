@@ -100,7 +100,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level2</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;_THP_CORE;AT_PARALLEL_OPENMP=1;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_WIN32_WINDOWS;NOMINMAX;_THP_CORE;AT_PARALLEL_OPENMP=1;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
