@@ -34,7 +34,8 @@ public:
 
   virtual void dataWriter(const std::string &logFile,
                           const std::vector<float> &tensorData) override {
-    std::ofstream fileHandle(logFile, std::ios::trunc);
+    
+    /*std::ofstream fileHandle(logFile, std::ios::trunc);
     fileHandle << "date,price\n";
     if (fileHandle.good()) {
       for (size_t idx = 0; idx < tensorData.size(); ++idx) {
@@ -42,7 +43,8 @@ public:
                    << '\n';
       }
     }
-    fileHandle.close();
+    fileHandle.close();*/
+
   }
 
 private:
