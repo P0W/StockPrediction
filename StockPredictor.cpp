@@ -103,11 +103,11 @@ void StockPredictor::testModel() {
   std::ofstream fileHandle(testLogFile);
   fileHandle << "Close, Price\n";
   std::transform(std::cbegin(y_test), std::cend(y_test), std::cbegin(allDates),
-      std::ostream_iterator<std::string>(fileHandle, "\n"),
-      [](const auto& price, const auto& date) {
-      return   std::string(date) + std::string(",") + std::to_string(price);
-  }
-  );
+                 std::ostream_iterator<std::string>(fileHandle, "\n"),
+                 [](const auto &price, const auto &date) {
+                   return std::string(date) + std::string(",") +
+                          std::to_string(price);
+                 });
   fileHandle.close();
 
   // Predict the output using the neural network from test dataSet
@@ -127,7 +127,9 @@ StockPredictor::~StockPredictor() {}
 
 void StockPredictor::loadTimeSeries() {}
 
-std::vector<float> StockPredictor::predict(const std::vector<float> &input, const std::vector<float>& expectedOuput) {
+std::vector<float>
+StockPredictor::predict(const std::vector<float> &input,
+                        const std::vector<float> &expectedOuput) {
 
   std::vector<float> result;
   auto x_test = torch::tensor(input);
@@ -136,15 +138,17 @@ std::vector<float> StockPredictor::predict(const std::vector<float> &input, cons
   torch::Tensor pred;
   float deviation = 1.0;
   {
-      torch::NoGradGuard no_grad;
-      pred = m_lstmNetwork->forward(x_test);
-      if (!expectedOuput.empty()) {
-          auto target = torch::tensor(expectedOuput).to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
-          auto loss = torch::mse_loss(pred, target);
-          deviation = loss.item<float>();
-          std::cout << "WEBREQUEST Prediction Loss: " << deviation << '\n';
-      }
-      pred = pred.detach();
+    torch::NoGradGuard no_grad;
+    pred = m_lstmNetwork->forward(x_test);
+    if (!expectedOuput.empty()) {
+      auto target =
+          torch::tensor(expectedOuput)
+              .to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+      auto loss = torch::mse_loss(pred, target);
+      deviation = loss.item<float>();
+      std::cout << "WEBREQUEST Prediction Loss: " << deviation << '\n';
+    }
+    pred = pred.detach();
   }
   for (int64_t idx = 0; idx < pred.size(0); ++idx) {
     result.push_back(pred[idx].item<float>());

@@ -29,8 +29,8 @@ public:
 
   std::vector<float> fit(const std::vector<float> &x_train,
                          const std::vector<float> &y_train,
-      const std::vector<float> &x_test = {},
-      const std::vector<float> &y_test = {});
+                         const std::vector<float> &x_test = {},
+                         const std::vector<float> &y_test = {});
 
   void saveModel(const std::string &fileName) const;
   void loadModel(const std::string &fileName);

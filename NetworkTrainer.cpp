@@ -65,7 +65,7 @@ NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
       .with_bias(NetworkConstants::kIncludeBias);
 
   torch::nn::LinearOptions linearOpts(hidden, output);
-  linearOpts.with_bias(true);
+  linearOpts.with_bias(false);
   lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
 
   torch::optim::AdamOptions opts(learningRate);
@@ -83,9 +83,8 @@ NetworkTrainer::~NetworkTrainer() {}
 
 std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
                                        const std::vector<float> &y_train,
-    const std::vector<float> &x_test,
-    const std::vector<float> &y_test) {
-
+                                       const std::vector<float> &x_test,
+                                       const std::vector<float> &y_test) {
   torch::Tensor y_pred, input, target, input_test, target_test;
   torch::Tensor loss;
 
@@ -95,15 +94,15 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   target = torch::tensor(y_train);
 
   if (!noValidateDataSet) {
-      input_test = torch::tensor(x_test).view({ prevSamples, -1, 1 });
-      target_test = torch::tensor(y_test);
+    input_test = torch::tensor(x_test).view({prevSamples, -1, 1});
+    target_test = torch::tensor(y_test);
   }
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
     target = target.to(torch::kCUDA);
     if (!noValidateDataSet) {
-        input_test = input_test.to(torch::kCUDA);
-        target_test = target_test.to(torch::kCUDA);
+      input_test = input_test.to(torch::kCUDA);
+      target_test = target_test.to(torch::kCUDA);
     }
   }
 
@@ -129,17 +128,19 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     }
   }
 
- torch::optim::LBFGSOptions lbfgs(NetworkConstants::kLearningRate);
- auto lbfgsOptimizer = std::make_shared<torch::optim::LBFGS>(torch::optim::LBFGS(lstmNetwork->parameters(), lbfgs));
+  torch::optim::LBFGSOptions lbfgs(NetworkConstants::kLearningRate);
+  auto lbfgsOptimizer = std::make_shared<torch::optim::LBFGS>(
+      torch::optim::LBFGS(lstmNetwork->parameters(), lbfgs));
 
- auto closure = [this, &lbfgsOptimizer, &y_pred, &loss, &input, &target]() {
-      lbfgsOptimizer->zero_grad();
-      y_pred = lstmNetwork->forward(input);
-      loss = torch::mse_loss(y_pred, target);
-      loss.backward();
-      return loss;
+#ifdef TEST
+  auto closure = [this, &lbfgsOptimizer, &y_pred, &loss, &input, &target]() {
+    lbfgsOptimizer->zero_grad();
+    y_pred = lstmNetwork->forward(input);
+    loss = torch::mse_loss(y_pred, target);
+    loss.backward();
+    return loss;
   };
-
+#endif
   while (running_loss > kRunningLoss) {
 #ifndef TEST
     // Zero out the gradients
@@ -157,56 +158,55 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     // Step the optimizer
     optimizer->step();
 #else
-      lbfgsOptimizer->step(closure);
+    lbfgsOptimizer->step(closure);
 #endif
-      training_loss = loss.item<float>();
-      if (noValidateDataSet) {
-          running_loss = loss.item<float>();
-          // Save model and write the predicted tensor
-          if (minimumLoss > running_loss) {
-              saveModel(neuralNetLogFile);
-              dataWriter(predictLogFile, extractData(y_pred));
-              minimumLoss = running_loss;
-          }
+    training_loss = loss.item<float>();
+    if (noValidateDataSet) {
+      running_loss = loss.item<float>();
+      saveFlag = false;
+      // Save model and write the predicted tensor
+      if (minimumLoss > running_loss) {
+        saveModel(neuralNetLogFile);
+        dataWriter(predictLogFile, extractData(y_pred));
+        minimumLoss = running_loss;
+        saveFlag = true;
       }
-      else 
-     {
-       // Validate and save model
-        torch::NoGradGuard nograd;
-        auto validateOut = lstmNetwork->forward(input_test);
-        auto validateLoss = torch::mse_loss(validateOut, target_test);
-        running_loss = validateLoss.item<float>();
-        saveFlag = false;
-        if (minimumLoss > running_loss) {
-            saveModel(neuralNetLogFile);
-            dataWriter(predictLogFile, extractData(y_pred));
-            minimumLoss = running_loss;
-            saveFlag = true;
-        }
+    } else {
+      // Validate and save model
+      torch::NoGradGuard nograd;
+      auto validateOut = lstmNetwork->forward(input_test);
+      auto validateLoss = torch::mse_loss(validateOut, target_test);
+      running_loss = validateLoss.item<float>();
+      saveFlag = false;
+      if (minimumLoss > running_loss) {
+        saveModel(neuralNetLogFile);
+        dataWriter(predictLogFile, extractData(y_pred));
+        minimumLoss = running_loss;
+        saveFlag = true;
+      }
     }
     if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
                 << minimumLoss << std::endl;
-      return extractData(y_pred.detach());
+      return extractData(y_pred);
     }
 
     else if (running_loss < NetworkConstants::kMinimumLoss) {
       std::cout << "Network fully trained!\n";
       logFullyTrainedModel(modelName, companyName, running_loss, epoch, t2);
-      return extractData(y_pred.detach());
+      return extractData(y_pred);
     }
 
-    else if (epoch % 10 == 0 || saveFlag) {
-        t2.show(false);
-        std::cout << " epoch " << epoch << " [Traing Loss = " << training_loss
-            << " Validation Loss = " << running_loss
-            << " ( "
-            << companyName << " ) ]" << ((saveFlag) ? "(**best**)\n" : "\n");
+    else if (epoch % 50 == 0 || saveFlag) {
+      t2.show(false);
+      std::cout << " epoch " << epoch << " [Traing Loss = " << training_loss
+                << " Validation Loss = " << running_loss << " ( "<< companyName
+                << " ) ]" << ((saveFlag) ? "(**best**)\n" : "\n");
     }
     epoch++;
   }
 
-  return extractData(y_pred.detach());
+  return extractData(y_pred);
 }
 
 void NetworkTrainer::saveModel(const std::string &fileName) const {

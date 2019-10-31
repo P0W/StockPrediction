@@ -99,13 +99,13 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
                           NetworkConstants::kPrevSamples);
 
   auto trainData = stockData.getTrainData();
-  auto testData = stockData.getTestData();
+  //auto testData = stockData.getTestData();
 
   const auto &x_train = std::get<0>(trainData);
   const auto &y_train = std::get<1>(trainData);
 
-  const auto &x_test = std::get<0>(testData);
-  const auto &y_test = std::get<1>(testData);
+  //const auto &x_test = std::get<0>(testData);
+  //const auto &y_test = std::get<1>(testData);
 
   // Record this stock for front end to update
   updateConfig(NetworkConstants::kRootFolder + "stock_train.csv", stockSymbol,
@@ -117,7 +117,7 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
   model->dataWriter(NetworkConstants::kRootFolder + stockSymbol + "_train.csv",
                     y_train);
 
-  (void)model->fit(x_train, y_train, x_test, y_test);
+  (void)model->fit(x_train, y_train);
 
   return true;
 }
@@ -125,7 +125,7 @@ bool NetworkTrainerFacade(const std::string &stockSymbol,
 
 int main(int argc, char **argv) {
 
-  if (argc == 2) {
+  if (argc >= 2) {
     std::string stockParam = argv[1];
     bool testingMode = false;
     bool singleTraining = false;
@@ -133,12 +133,11 @@ int main(int argc, char **argv) {
       testingMode = true;
       singleTraining = false;
     } else if (stockParam.find("trainMode") != std::string::npos) {
-        testingMode = false;
-        singleTraining = false;
-    }
-    else if (stockParam.find("BOM") != std::string::npos) {
-        testingMode = false;
-        singleTraining = true;
+      testingMode = false;
+      singleTraining = false;
+    } else if (stockParam.find("BOM") != std::string::npos) {
+      testingMode = false;
+      singleTraining = true;
     }
 
     if (testingMode && !singleTraining) {
@@ -175,12 +174,12 @@ int main(int argc, char **argv) {
         }
       }
     } else {
-        (void)NetworkTrainerFacade(argv[1]);
+      (void)NetworkTrainerFacade(argv[1], argv[2]);
     }
   } else {
-      std::cout << "\nUsage :"
-          << argv[0] << "testMode | trainMode | BSEStockSymbol\n";
+    std::cout << "\nUsage :" << argv[0]
+              << " testMode | trainMode | BSEStockSymbol\n";
   }
-  
+
   return 0;
 }

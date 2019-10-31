@@ -10,8 +10,8 @@
 const int64_t NetworkConstants::kPrevSamples = 5;
 const int64_t NetworkConstants::kMaxEpochs = 1e4;
 const double NetworkConstants::kMaxTrainTime = 900.0; // seconds
-const float NetworkConstants::kLearningRate = 1e2;
-const double NetworkConstants::kMinimumLoss = 1e-5;
+const float NetworkConstants::kLearningRate = 0.01;
+const double NetworkConstants::kMinimumLoss = 2e-4;
 const float NetworkConstants::kSplitRatio = 0.01;
 const bool NetworkConstants::kIncludeBias = false;
 
@@ -22,8 +22,8 @@ const int64_t NetworkConstants::num_of_layers = 4;
 
 const size_t NetworkConstants::kMaxStockPrices = 6000;
 
-const double NetworkConstants::klsmt1DropOut = 0.1;
-const double NetworkConstants::klsmt2DropOut = 0.2;
+const double NetworkConstants::klsmt1DropOut = 0.0;
+const double NetworkConstants::klsmt2DropOut = 0.0;
 
 const std::string NetworkConstants::kRootFolder = "stockData/";
 
