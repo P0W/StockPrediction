@@ -170,10 +170,10 @@ void handle_request(beast::string_view doc_root,
     std::string justSymbolPath = path;
     std::string args;
 
-    const auto& argsPos = path.find("?");
+    const auto &argsPos = path.find("?");
     if (argsPos != std::string::npos) {
-        justSymbolPath = path.substr(0, argsPos);
-        args = path.substr(argsPos + 1, path.size());
+      justSymbolPath = path.substr(0, argsPos);
+      args = path.substr(argsPos + 1, path.size());
     }
     stockRequest->loadModel(justSymbolPath);
     stockRequest->testModel(args);

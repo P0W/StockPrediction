@@ -32,9 +32,9 @@ public:
             NetworkConstants::kMaxEpochs, fileName, companyName),
         minMaxScaler{minmaxScaler}, allDates{allDates} {}
 
-  virtual void dataWriter(const std::string &logFile,
-                          const std::vector<float> &tensorData) override {
-    
+  virtual void dataWriter(const std::string &,
+                          const std::vector<float> &) override {
+
     /*std::ofstream fileHandle(logFile, std::ios::trunc);
     fileHandle << "date,price\n";
     if (fileHandle.good()) {
@@ -44,7 +44,6 @@ public:
       }
     }
     fileHandle.close();*/
-
   }
 
 private:

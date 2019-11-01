@@ -106,10 +106,10 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     }
   }
 
-  float running_loss = std::numeric_limits<float>::infinity(), 
-      minimumLoss = std::numeric_limits<float>::infinity(), 
-      training_loss = std::numeric_limits<float>::infinity(),
-      accumulated_loss = 0.0;
+  float running_loss = std::numeric_limits<float>::infinity(),
+        minimumLoss = std::numeric_limits<float>::infinity(),
+        training_loss = std::numeric_limits<float>::infinity(),
+        accumulated_loss = 0.0;
   int64_t epoch = 0;
   input.set_requires_grad(true);
 
@@ -180,14 +180,14 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       lstmNetwork->eval();
       accumulated_loss = 0.0;
       for (int64_t idx = 0; idx < input_test.size(1); ++idx) {
-          const auto& slicedTensor = input_test.slice(1, idx, idx + 1);
-          const auto& slicedTargetTensor = target_test.slice(0, idx, idx+1);
-          auto validateOut = lstmNetwork->forward(slicedTensor);
-          auto validateLoss = torch::mse_loss(validateOut, slicedTargetTensor);
-          accumulated_loss += validateLoss.item<float>();
+        const auto &slicedTensor = input_test.slice(1, idx, idx + 1);
+        const auto &slicedTargetTensor = target_test.slice(0, idx, idx + 1);
+        auto validateOut = lstmNetwork->forward(slicedTensor);
+        auto validateLoss = torch::mse_loss(validateOut, slicedTargetTensor);
+        accumulated_loss += validateLoss.item<float>();
       }
-      //auto validateOut = lstmNetwork->forward(input_test);
-      //auto validateLoss = torch::mse_loss(validateOut, target_test);
+      // auto validateOut = lstmNetwork->forward(input_test);
+      // auto validateLoss = torch::mse_loss(validateOut, target_test);
       running_loss = accumulated_loss;
       saveFlag = false;
       if (minimumLoss > running_loss) {
@@ -197,14 +197,14 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
         saveFlag = true;
         iValidatedGood = true;
       }
-      
+
       if (!saveFlag && (minimumLoss > training_loss)) {
-          // Then also save model ... we don't want to discard good training
-          saveModel(neuralNetLogFile);
-          dataWriter(predictLogFile, extractData(y_pred));
-          minimumLoss = training_loss;
-          saveFlag = true;
-          iValidatedGood = false;
+        // Then also save model ... we don't want to discard good training
+        saveModel(neuralNetLogFile);
+        dataWriter(predictLogFile, extractData(y_pred));
+        minimumLoss = training_loss;
+        saveFlag = true;
+        iValidatedGood = false;
       }
       lstmNetwork->train();
     }
@@ -223,9 +223,12 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     else if (epoch % 50 == 0 || saveFlag) {
       t2.show(false);
       std::cout << " epoch " << epoch << " [Traing Loss = " << training_loss
-          << " Validation Loss = " << running_loss << " ( " << companyName
-          << " ) ]" << ((saveFlag) ? "(**best " : "")
-          << ((saveFlag && iValidatedGood) ? " validation**)\n" : (saveFlag && !iValidatedGood) ? " training**)\n" : "\n");
+                << " Validation Loss = " << running_loss << " ( " << companyName
+                << " ) ]" << ((saveFlag) ? "(**best " : "")
+                << ((saveFlag && iValidatedGood)
+                        ? " validation**)\n"
+                        : (saveFlag && !iValidatedGood) ? " training**)\n"
+                                                        : "\n");
     }
     epoch++;
   }

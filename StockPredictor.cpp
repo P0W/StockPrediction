@@ -89,26 +89,26 @@ void StockPredictor::predict(const int64_t N) {
   fileLogger(m_stockSymbol + "_future.csv", predictedNormalizedPrices);
 }
 
-void StockPredictor::testModel(const std::string& args) {
+void StockPredictor::testModel(const std::string &args) {
 
   const std::string testPreditorLogFile = m_stockSymbol + "_test_pred.csv";
   const std::string testLogFile = m_stockSymbol + "_test.csv";
   int64_t days = -1;
   bool grabTrainData = false;
   try {
-      days = std::stoi(args);
-  }
-  catch (...){
-      days = -1;
+    days = std::stoi(args);
+  } catch (...) {
+    days = -1;
   }
   if (days != -1) {
-      predict(days);
-      return;
+    predict(days);
+    return;
   }
   if (args.compare("trainData") == 0) {
-      grabTrainData = true;
+    grabTrainData = true;
   }
-  const auto &dataSet = (grabTrainData) ? m_stockPrices->getTrainData() : m_stockPrices->getTestData();
+  const auto &dataSet = (grabTrainData) ? m_stockPrices->getTrainData()
+                                        : m_stockPrices->getTestData();
 
   const auto &x_test = std::get<0>(dataSet);
   const auto &y_test = std::get<1>(dataSet);
@@ -147,8 +147,12 @@ StockPredictor::predict(const std::vector<float> &input,
 
   std::vector<float> result;
   auto x_test = torch::tensor(input);
+  bool gpuAvailable = torch::cuda::is_available();
+  if (gpuAvailable) {
+    m_lstmNetwork->to(torch::kCUDA);
+  }
   x_test = x_test.view({NetworkConstants::kPrevSamples, -1, 1});
-  x_test = x_test.to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+  x_test = x_test.to(gpuAvailable ? torch::kCUDA : torch::kCPU);
   torch::Tensor pred;
   float deviation = 1.0;
   m_lstmNetwork->eval();
@@ -156,9 +160,8 @@ StockPredictor::predict(const std::vector<float> &input,
     torch::NoGradGuard no_grad;
     pred = m_lstmNetwork->forward(x_test);
     if (!expectedOuput.empty()) {
-      auto target =
-          torch::tensor(expectedOuput)
-              .to(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+      auto target = torch::tensor(expectedOuput)
+                        .to(gpuAvailable ? torch::kCUDA : torch::kCPU);
       auto loss = torch::mse_loss(pred, target);
       deviation = loss.item<float>();
       std::cout << "WEBREQUEST Prediction Loss: " << deviation << '\n';
