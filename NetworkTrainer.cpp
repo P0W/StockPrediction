@@ -43,32 +43,30 @@ std::vector<float> extractData(torch::Tensor &tensorData) {
 }
 } // namespace
 
-NetworkTrainer::NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
-                               int64_t numLayers, int64_t prevSamples,
-                               double learningRate, int64_t maxEpochs,
-                               const std::string &modelName,
+NetworkTrainer::NetworkTrainer(const std::string &modelName,
                                const std::string &companyName)
     :
 
-      gpuAvailable(torch::cuda::is_available()), maxEpochs(maxEpochs),
-      prevSamples(prevSamples), modelName(modelName), companyName(companyName),
+      gpuAvailable(torch::cuda::is_available()), 
+      modelName(modelName), companyName(companyName),
       lstmNetwork(nullptr), optimizer(nullptr)
 
 {
-  torch::nn::LSTMOptions lstmOpts1(input, hidden);
-  torch::nn::LSTMOptions lstmOpts2(hidden, hidden);
-  lstmOpts1.layers(numLayers)
+  torch::nn::LSTMOptions lstmOpts1(NetworkConstants::input_size, NetworkConstants::hidden_size);
+  torch::nn::LSTMOptions lstmOpts2(NetworkConstants::hidden_size, NetworkConstants::hidden_size);
+  lstmOpts1.layers(NetworkConstants::num_of_layers)
       .dropout(NetworkConstants::klsmt1DropOut)
-      .with_bias(NetworkConstants::kIncludeBias);
-  lstmOpts2.layers(numLayers)
+      .with_bias(NetworkConstants::kLstmIncludeBias);
+  lstmOpts2.layers(NetworkConstants::num_of_layers)
       .dropout(NetworkConstants::klsmt2DropOut)
-      .with_bias(NetworkConstants::kIncludeBias);
+      .with_bias(NetworkConstants::kLstmIncludeBias);
 
-  torch::nn::LinearOptions linearOpts(hidden, output);
-  linearOpts.with_bias(false);
-  lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
+  torch::nn::LinearOptions linearOpts(NetworkConstants::hidden_size, NetworkConstants::output_size);
+  linearOpts.with_bias(NetworkConstants::kIncludeLinearBias);
+  torch::nn::DropoutOptions dropOutOpts(NetworkConstants::kdropOutDropOut);
+  lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, dropOutOpts, linearOpts);
 
-  torch::optim::AdamOptions opts(learningRate);
+  torch::optim::AdamOptions opts(NetworkConstants::kLearningRate);
   optimizer = std::make_shared<torch::optim::Adam>(
       torch::optim::Adam(lstmNetwork->parameters(), opts));
 
@@ -90,11 +88,23 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   bool noValidateDataSet = x_test.empty() && y_test.empty();
   bool saveFlag = false;
   bool iValidatedGood = false;
-  input = torch::tensor(x_train).view({prevSamples, -1, 1});
+  
+  float running_loss = std::numeric_limits<float>::infinity(),
+      minimumLoss = std::numeric_limits<float>::infinity(),
+      training_loss = std::numeric_limits<float>::infinity(),
+      accumulated_loss = 0.0;
+  int64_t epoch = 0;
+  
+  const std::string neuralNetLogFile =
+      NetworkConstants::kRootFolder + modelName + ".pt";
+  const std::string predictLogFile =
+      NetworkConstants::kRootFolder + modelName + "_pred.csv";
+
+  input = torch::tensor(x_train).view({NetworkConstants::kPrevSamples, -1, 1});
   target = torch::tensor(y_train);
 
   if (!noValidateDataSet) {
-    input_test = torch::tensor(x_test).view({prevSamples, -1, 1});
+    input_test = torch::tensor(x_test).view({ NetworkConstants::kPrevSamples, -1, 1});
     target_test = torch::tensor(y_test);
   }
   if (gpuAvailable) {
@@ -106,20 +116,10 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     }
   }
 
-  float running_loss = std::numeric_limits<float>::infinity(),
-        minimumLoss = std::numeric_limits<float>::infinity(),
-        training_loss = std::numeric_limits<float>::infinity(),
-        accumulated_loss = 0.0;
-  int64_t epoch = 0;
   input.set_requires_grad(true);
 
   Timer t1("Total Elapsed Time: %2.f\n");
   Timer t2("Epoch Time: %.2f ");
-
-  const std::string neuralNetLogFile =
-      NetworkConstants::kRootFolder + modelName + ".pt";
-  const std::string predictLogFile =
-      NetworkConstants::kRootFolder + modelName + "_pred.csv";
 
   if (!modelName.empty()) {
     try {
@@ -184,11 +184,10 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
         const auto &slicedTargetTensor = target_test.slice(0, idx, idx + 1);
         auto validateOut = lstmNetwork->forward(slicedTensor);
         auto validateLoss = torch::mse_loss(validateOut, slicedTargetTensor);
-        accumulated_loss += validateLoss.item<float>();
+        accumulated_loss += std::pow(validateLoss.item<float>(), 2.0f);
       }
-      // auto validateOut = lstmNetwork->forward(input_test);
-      // auto validateLoss = torch::mse_loss(validateOut, target_test);
-      running_loss = accumulated_loss;
+      // Calculate Mean Square Error
+      running_loss = std::sqrt(accumulated_loss/ input_test.size(1));
       saveFlag = false;
       if (minimumLoss > running_loss) {
         saveModel(neuralNetLogFile);
@@ -208,7 +207,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       }
       lstmNetwork->train();
     }
-    if (epoch >= this->maxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
+    if (epoch >= NetworkConstants::kMaxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
                 << minimumLoss << std::endl;
       return extractData(y_pred);

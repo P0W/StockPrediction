@@ -21,9 +21,7 @@ class Optimizer;
 class NetworkTrainer {
 public:
   const float kRunningLoss = 0.0001;
-  NetworkTrainer(int64_t input, int64_t hidden, int64_t output,
-                 int64_t numLayers, int64_t prevSamples, double learningRate,
-                 int64_t maxEpochs, const std::string &modelName,
+  NetworkTrainer(const std::string &modelName,
                  const std::string &companyName);
   virtual ~NetworkTrainer();
 
@@ -43,8 +41,6 @@ public:
 
 private:
   bool gpuAvailable;
-  int64_t maxEpochs;
-  int64_t prevSamples;
   std::string modelName;
   std::string companyName;
   std::shared_ptr<StockLSTM> lstmNetwork;

@@ -25,11 +25,7 @@ public:
                       const std::string &companyName,
                       const MinMaxScaler<float> &minmaxScaler,
                       const std::vector<std::string> allDates)
-      : NetworkTrainer(
-            NetworkConstants::input_size, NetworkConstants::hidden_size,
-            NetworkConstants::output_size, NetworkConstants::num_of_layers,
-            NetworkConstants::kPrevSamples, NetworkConstants::kLearningRate,
-            NetworkConstants::kMaxEpochs, fileName, companyName),
+      : NetworkTrainer(fileName, companyName),
         minMaxScaler{minmaxScaler}, allDates{allDates} {}
 
   virtual void dataWriter(const std::string &,

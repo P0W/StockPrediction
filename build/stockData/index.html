@@ -50,10 +50,7 @@
         d3.csv('fullTrained.csv', function (d) {
             return {
                 'symbol': d.Symbol,
-                'company': d.Company,
-                'loss': d.loss,
-                'epochs': d.Epochs,
-                'duration': d.Duration
+                'company': d.Company
             };
         }, function (error, data) {
 

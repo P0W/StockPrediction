@@ -122,11 +122,14 @@ torch::Tensor OptimizedLSTM::forward(const torch::Tensor &input) {
 
 StockLSTM::StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
                      const torch::nn::LSTMOptions &lstmOpts2,
+                     const torch::nn::DropoutOptions& dropOutOpts,
                      const torch::nn::LinearOptions &linearOpts)
     : torch::nn::Module(),
       lstm1(register_module("lstm1", torch::nn::LSTM(lstmOpts1))),
       lstm2(register_module("lstm2", torch::nn::LSTM(lstmOpts2))),
-      linear(register_module("linear", torch::nn::Linear(linearOpts))) {}
+      dropOut(register_module("dropOut", torch::nn::Dropout(dropOutOpts))),
+      linear(register_module("linear", torch::nn::Linear(linearOpts))),
+      sigmoid(register_module("sigmoid", torch::nn::Sigmoid())) {}
 
 StockLSTM::~StockLSTM() {}
 
@@ -144,10 +147,12 @@ torch::Tensor StockLSTM::forward(const torch::Tensor &input) {
   // '\n';  //[ 3616, 64 ]
 
   const auto &maxTensorTuple = torch::max(lstm_out.output, 0);
-  const auto &maxTensor = lstm_out.output[-1]; // std::get<0>(maxTensorTuple);
+  auto &outTensor = lstm_out.output[-1]; // std::get<0>(maxTensorTuple);
   // std::cout << lstm_out.output[-1].sizes() << '\n';
   // std::cout << "temp.sizes()" << std::get<0>(temp).sizes();
-  torch::Tensor y_pred = this->linear->forward(maxTensor);
+  outTensor = this->dropOut->forward(outTensor);
+  torch::Tensor y_pred = this->linear->forward(outTensor);
+  //y_pred = sigmoid(y_pred);
   // std::get<0>(
   //  maxTensor)); // 0 is the max values, 1 is the indices of max values
   // std::cout << y_pred.sizes() << '\n';             //[3616,1]

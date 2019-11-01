@@ -22,15 +22,16 @@ StockPredictor::StockPredictor()
                                    NetworkConstants::hidden_size);
   lstmOpts1.layers(NetworkConstants::num_of_layers)
       .dropout(NetworkConstants::klsmt1DropOut)
-      .with_bias(NetworkConstants::kIncludeBias);
+      .with_bias(NetworkConstants::kLstmIncludeBias);
   lstmOpts2.layers(NetworkConstants::num_of_layers)
       .dropout(NetworkConstants::klsmt2DropOut)
-      .with_bias(NetworkConstants::kIncludeBias);
+      .with_bias(NetworkConstants::kLstmIncludeBias);
 
   torch::nn::LinearOptions linearOpts(NetworkConstants::hidden_size,
                                       NetworkConstants::output_size);
   linearOpts.with_bias(false);
-  m_lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, linearOpts);
+  torch::nn::DropoutOptions dropOutOpts(NetworkConstants::kdropOutDropOut);
+  m_lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, dropOutOpts, linearOpts);
 }
 
 void StockPredictor::loadModel(const std::string &stockSymbol) {
@@ -146,31 +147,40 @@ StockPredictor::predict(const std::vector<float> &input,
                         const std::vector<float> &expectedOuput) {
 
   std::vector<float> result;
-  auto x_test = torch::tensor(input);
+  torch::Tensor x_test = torch::tensor(input), target;
+  float accumulated_loss = 0.0f;
+
   bool gpuAvailable = torch::cuda::is_available();
   if (gpuAvailable) {
     m_lstmNetwork->to(torch::kCUDA);
   }
+  if (!expectedOuput.empty()) {
+      target = torch::tensor(expectedOuput)
+          .to(gpuAvailable ? torch::kCUDA : torch::kCPU);
+  }
   x_test = x_test.view({NetworkConstants::kPrevSamples, -1, 1});
   x_test = x_test.to(gpuAvailable ? torch::kCUDA : torch::kCPU);
-  torch::Tensor pred;
-  float deviation = 1.0;
+
   m_lstmNetwork->eval();
   {
     torch::NoGradGuard no_grad;
-    pred = m_lstmNetwork->forward(x_test);
-    if (!expectedOuput.empty()) {
-      auto target = torch::tensor(expectedOuput)
-                        .to(gpuAvailable ? torch::kCUDA : torch::kCPU);
-      auto loss = torch::mse_loss(pred, target);
-      deviation = loss.item<float>();
-      std::cout << "WEBREQUEST Prediction Loss: " << deviation << '\n';
+
+    for (int64_t idx = 0; idx < x_test.size(1); ++idx) {
+        const auto &slicedTensor = x_test.slice(1, idx, idx + 1);
+        auto validateOut = m_lstmNetwork->forward(slicedTensor);
+        result.push_back(validateOut.item<float>());
+        if (!expectedOuput.empty()) {
+            const auto &slicedTargetTensor = target.slice(0, idx, idx + 1);
+            auto validateLoss = torch::mse_loss(validateOut, slicedTargetTensor);
+            accumulated_loss += std::pow(validateLoss.item<float>(), 2.0f);
+        }
     }
-    pred = pred.detach();
+    if (!expectedOuput.empty()) {
+        accumulated_loss = std::sqrt(accumulated_loss/x_test.size(1));
+        std::cout << "WEBREQUEST Prediction Loss: " << accumulated_loss << '\n';
+    }
   }
-  for (int64_t idx = 0; idx < pred.size(0); ++idx) {
-    result.push_back(pred[idx].item<float>());
-  }
+
   return result;
 }
 

@@ -56,6 +56,7 @@ class StockLSTM : public torch::nn::Module {
 public:
   StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
             const torch::nn::LSTMOptions &lstmOpts2,
+            const torch::nn::DropoutOptions& dropOutOpts,
             const torch::nn::LinearOptions &linearOpts);
   ~StockLSTM();
 
@@ -64,7 +65,9 @@ public:
 private:
   torch::nn::LSTM lstm1;
   torch::nn::LSTM lstm2;
+  torch::nn::Dropout dropOut;
   torch::nn::Linear linear;
+  torch::nn::Sigmoid sigmoid;
 };
 
 #endif // !STOCK_LSTM_HPP_
