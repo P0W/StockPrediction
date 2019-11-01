@@ -128,8 +128,7 @@ StockLSTM::StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
       lstm1(register_module("lstm1", torch::nn::LSTM(lstmOpts1))),
       lstm2(register_module("lstm2", torch::nn::LSTM(lstmOpts2))),
       dropOut(register_module("dropOut", torch::nn::Dropout(dropOutOpts))),
-      linear(register_module("linear", torch::nn::Linear(linearOpts))),
-      sigmoid(register_module("sigmoid", torch::nn::Sigmoid())) {}
+      linear(register_module("linear", torch::nn::Linear(linearOpts))) {}
 
 StockLSTM::~StockLSTM() {}
 

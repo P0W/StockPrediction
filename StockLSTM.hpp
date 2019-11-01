@@ -67,7 +67,6 @@ private:
   torch::nn::LSTM lstm2;
   torch::nn::Dropout dropOut;
   torch::nn::Linear linear;
-  torch::nn::Sigmoid sigmoid;
 };
 
 #endif // !STOCK_LSTM_HPP_
