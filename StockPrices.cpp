@@ -14,7 +14,6 @@
 #endif
 
 #include "MinMaxScaler.hpp"
-#include "NetworkConstants.hpp"
 #include "StockPrices.hpp"
 #include <algorithm>
 #include <cassert>
@@ -111,7 +110,7 @@ StockPrices::StockPrices(MinMaxScaler<float> &scaler)
 
 StockPrices::~StockPrices() {}
 
-bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
+bool StockPrices::loadTimeSeries(const std::string &stockSymbol, const int64_t& maxDataSize) {
 #ifdef WIN32
   const auto pos = stockSymbol.find_last_of('\\');
 #else
@@ -163,11 +162,11 @@ bool StockPrices::loadTimeSeries(const std::string &stockSymbol) {
   std::sort(std::begin(stockData), std::end(stockData));
 
   size_t vecSize = stockData.size();
-  // Grab only NetworkConstants::kMaxStockPrices stock prices
-  if (vecSize > NetworkConstants::kMaxStockPrices) {
+  // Grab only maxDataSize stock prices
+  if (vecSize > maxDataSize) {
     stockData.erase(std::begin(stockData),
                     std::begin(stockData) +
-                        (vecSize - NetworkConstants::kMaxStockPrices));
+                        (vecSize - maxDataSize));
   }
   stockClosePrices.reserve(stockData.size());
   dates.reserve(stockClosePrices.size());

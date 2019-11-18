@@ -66,10 +66,12 @@ NetworkTrainer::NetworkTrainer(const std::string &modelName,
   torch::nn::DropoutOptions dropOutOpts(NetworkConstants::kdropOutDropOut);
   lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, dropOutOpts, linearOpts);
 
+  // Create the optimizer in pytorch
   torch::optim::AdamOptions opts(NetworkConstants::kLearningRate);
   optimizer = std::make_shared<torch::optim::Adam>(
       torch::optim::Adam(lstmNetwork->parameters(), opts));
 
+  // Check is GPU is Available, if it is move the network processing on GPU
   if (gpuAvailable) {
     std::cout << "Using CUDA\n";
     lstmNetwork->to(torch::kCUDA);
@@ -107,6 +109,8 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
     input_test = torch::tensor(x_test).view({ NetworkConstants::kPrevSamples, -1, 1});
     target_test = torch::tensor(y_test);
   }
+
+  // Check if GPU is Available, if it is, move all input and target tensors on GPU
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
     target = target.to(torch::kCUDA);
@@ -144,6 +148,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   };
 #endif
   while (running_loss > kRunningLoss) {
+    // Set network to training mode.
     lstmNetwork->train();
 #ifndef USELBFGS
     // Zero out the gradients
@@ -163,6 +168,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
 #else
     lbfgsOptimizer->step(closure);
 #endif
+    // Calculate the training loss
     training_loss = loss.item<float>();
     if (noValidateDataSet) {
       running_loss = loss.item<float>();
@@ -176,7 +182,9 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       }
     } else {
       // Validate and save model
+      // Stop building gradients here
       torch::NoGradGuard nograd;
+      // Set network to evaluation mode
       lstmNetwork->eval();
       accumulated_loss = 0.0;
       for (int64_t idx = 0; idx < input_test.size(1); ++idx) {
@@ -189,6 +197,7 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       // Calculate Mean Square Error
       running_loss = std::sqrt(accumulated_loss/ input_test.size(1));
       saveFlag = false;
+      // If minimumLoss is greater than the running loss, save this trained model as a checkpoint
       if (minimumLoss > running_loss) {
         saveModel(neuralNetLogFile);
         dataWriter(predictLogFile, extractData(y_pred));
@@ -205,6 +214,8 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
         saveFlag = true;
         iValidatedGood = false;
       }
+
+      // Set the network back to training mode
       lstmNetwork->train();
     }
     if (epoch >= NetworkConstants::kMaxEpochs || t2 > NetworkConstants::kMaxTrainTime) {

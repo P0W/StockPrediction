@@ -66,60 +66,6 @@ torch::Tensor NaiveLSTM::forward(const torch::Tensor &x) {
       .contiguous();
 }
 
-OptimizedLSTM::OptimizedLSTM(int64_t input_sz, int64_t hidden_sz)
-    : Module(), m_inputSize(input_sz), m_hiddenSize(hidden_sz),
-      m_weight_ih(register_parameter("m_weight_ih",
-                                     torch::randn({input_sz, hidden_sz * 4}))),
-      m_weight_hh(register_parameter("m_weight_hh",
-                                     torch::randn({hidden_sz, hidden_sz * 4}))),
-      m_bias(register_parameter("m_bias", torch::randn(hidden_sz * 4))) {}
-
-OptimizedLSTM::~OptimizedLSTM() {}
-
-torch::Tensor OptimizedLSTM::forward(const torch::Tensor &input) {
-  std::vector<torch::Tensor> hidden_seq;
-
-  torch::Tensor h_t, c_t, i_t, f_t, g_t, o_t;
-  torch::Tensor input_t, r1, r2, gates{};
-  torch::Tensor hidden_seq_tensor;
-
-  h_t = torch::zeros(this->m_hiddenSize).to(input.device());
-  c_t = torch::zeros(this->m_hiddenSize).to(input.device());
-
-  int64_t seq_sz = input.size(1);
-  for (int64_t t = 0; t < seq_sz; ++t) {
-    input_t = input.select(1, t);
-    r1 = torch::matmul(input_t, this->m_weight_ih);
-    r2 = torch::matmul(h_t, this->m_weight_hh);
-    gates = torch::add(r1, r2, 0);
-    gates = torch::add(gates, this->m_bias, 0);
-    std::cout << "input.sizes()       =" << input.sizes() << std::endl;
-
-    std::cout << "input_t.sizes()       =" << input_t.sizes() << std::endl;
-
-    std::cout << "gates.sizes()       =" << gates.sizes() << std::endl;
-
-    i_t = torch::sigmoid(gates.slice(1, 0, this->m_hiddenSize)); // input
-    f_t = torch::sigmoid(gates.slice(1, this->m_hiddenSize,
-                                     this->m_hiddenSize * 2)); // # forget
-    g_t = torch::tanh(
-        gates.slice(1, this->m_hiddenSize * 2, this->m_hiddenSize * 3));
-    o_t = torch::sigmoid(gates.slice(1, this->m_hiddenSize * 3)); // output
-
-    c_t = f_t * c_t + i_t * g_t;
-    h_t = o_t * torch::tanh(c_t);
-
-    hidden_seq.push_back(h_t.unsqueeze(0));
-  }
-
-  hidden_seq_tensor = torch::cat(hidden_seq, 0);
-
-  // reshape from shape (sequence, batch, feature) to (batch, sequence,
-  // feature);
-
-  return hidden_seq_tensor.transpose(0, 1).contiguous();
-}
-
 StockLSTM::StockLSTM(const torch::nn::LSTMOptions &lstmOpts1,
                      const torch::nn::LSTMOptions &lstmOpts2,
                      const torch::nn::DropoutOptions& dropOutOpts,
@@ -134,28 +80,38 @@ StockLSTM::~StockLSTM() {}
 
 torch::Tensor StockLSTM::forward(const torch::Tensor &input) {
   // std::cout << input.sizes() << '\n';  //[5, 3616, 64]
-
-  torch::nn::RNNOutput lstm_out = this->lstm1->forward(input);
-
-  // std::cout << lstm_out.output.sizes() << '\n';  //[5, 3616, 64]
-  lstm_out = this->lstm2->forward(lstm_out.output, lstm_out.state);
-
-  // std::cout << lstm_out.output.sizes() << '\n';  // same as above [5,
-  // 3616,64] std::cout << lstm_out.output[-1].sizes() << '\n';  //[ 3616, 64 ]
-  // std::cout << lstm_out.output[-1].view({this->batch_size, -1}).sizes() <<
-  // '\n';  //[ 3616, 64 ]
-
-  const auto &maxTensorTuple = torch::max(lstm_out.output, 0);
-  auto &outTensor = lstm_out.output[-1]; // std::get<0>(maxTensorTuple);
-  // std::cout << lstm_out.output[-1].sizes() << '\n';
-  // std::cout << "temp.sizes()" << std::get<0>(temp).sizes();
-  outTensor = this->dropOut->forward(outTensor);
-  torch::Tensor y_pred = this->linear->forward(outTensor);
   //y_pred = sigmoid(y_pred);
   // std::get<0>(
   //  maxTensor)); // 0 is the max values, 1 is the indices of max values
   // std::cout << y_pred.sizes() << '\n';             //[3616,1]
   // std::cout << y_pred.view({-1}).sizes() << '\n';  //[3616]
 
+  // std::cout << lstm_out.output.sizes() << '\n';  //[5, 3616, 64]
+
+  // std::cout << lstm_out.output.sizes() << '\n';  // same as above [5,
+  // 3616,64] std::cout << lstm_out.output[-1].sizes() << '\n';  //[ 3616, 64 ]
+  // std::cout << lstm_out.output[-1].view({this->batch_size, -1}).sizes() <<
+  // '\n';  //[ 3616, 64 ]
+
+  // std::cout << lstm_out.output[-1].sizes() << '\n';
+  // std::cout << "temp.sizes()" << std::get<0>(temp).sizes();
+ // const auto &maxTensorTuple = torch::max(lstm_out.output, 0);
+  
+  // 1. Input tensor is of size (previousSamples, totalBatch, 1) and is feedforward to LSTM Layer -1
+  // All states here are initialized to 0.
+  torch::nn::RNNOutput lstm_out = this->lstm1->forward(input);
+
+  // 2. Output of Layer-1 is feedforward to LSTM Layer -2 with the states captures.
+  lstm_out = this->lstm2->forward(lstm_out.output, lstm_out.state);
+
+  // 3. Adjust the output tensor which is (totalBatch, 1) and make it to (totalBatch)
+  // and feedforward to the Drop Out Layer with probability of 20 %
+  auto &outTensor = lstm_out.output[-1];
+  outTensor = this->dropOut->forward(outTensor);
+
+  // 4. The final output of dropout layer is feedforward on Linear Layer.
+  torch::Tensor y_pred = this->linear->forward(outTensor);
+
+  // 5. Linear Layesr out put the the final output for one epoch
   return y_pred.view({-1});
 }

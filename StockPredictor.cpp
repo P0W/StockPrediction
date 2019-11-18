@@ -41,7 +41,7 @@ void StockPredictor::loadModel(const std::string &stockSymbol) {
     try {
       m_stockPrices.reset(new StockPrices(m_minmaxScaler));
 
-      if (m_stockPrices->loadTimeSeries(m_stockSymbol)) {
+      if (m_stockPrices->loadTimeSeries(m_stockSymbol, 2000)) {
         std::cout << m_stockSymbol << " has one or more bad entries\n";
       } else {
 
@@ -61,7 +61,7 @@ void StockPredictor::predict(const int64_t N) {
   // N is the next future N days predictions
   // For predicting 1 sample we would need last N but
   // NetworkConstants::kPrevSamples samples
-  auto testData = m_stockPrices->getTrainData();
+  auto testData = m_stockPrices->getTestData();
   auto testSamples = std::get<0>(testData);
 
   // Erase all but  NetworkConstants::kPrevSamples samples
@@ -184,11 +184,13 @@ StockPredictor::predict(const std::vector<float> &input,
         }
     }
     else {
+        // Feed forward the test data
         auto validateOut = m_lstmNetwork->forward(x_test);
         for (size_t ele = 0; ele < x_test.size(1); ++ele) {
             result.push_back(validateOut[ele].item<float>());
         }
         if (!expectedOuput.empty()) {
+            // Calculate the validation loss
             auto validateLoss = torch::mse_loss(validateOut, target);
             std::cout << "WEBREQUEST Prediction Loss: " << validateLoss.item<float>() << '\n';
         }

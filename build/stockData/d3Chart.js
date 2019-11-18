@@ -342,19 +342,27 @@ function setSelectedvalue(selectedStock) {
    currentSelectedStock = selectedStock;
 }
 
+// Function to request data from frontend
 function fetchData(args) {
+   // The REST like URL
    var url = "http://localhost:4242/stockData/" + currentSelectedStock.value + "?" + args;
+   // Use the built-in XMLHttpRequest from C++ backend
    fetch(url)
+      // Convert reqsponse object to text
       .then(response => response.text())
+      // When contents are recieved do the required processing
       .then(contents => {
-         console.log(contents);
+         // Check if its test or train data
          if (args === 'testData' || args === 'trainData') {
             plotTestData(currentSelectedStock.value);
          } else {
+            // if  not train or test request it is request for future price prediction
             createFuturePrices(currentSelectedStock.value);
          }
+         // Plot the data for visualization
          d3.select("#loader").style('display', 'none');
       })
+      // Handle any errors, if any
       .catch(() => console.log("Cannot access " + url + " Blocked by browser ?"));
 }
 
