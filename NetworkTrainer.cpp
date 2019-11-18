@@ -47,13 +47,14 @@ NetworkTrainer::NetworkTrainer(const std::string &modelName,
                                const std::string &companyName)
     :
 
-      gpuAvailable(torch::cuda::is_available()), 
-      modelName(modelName), companyName(companyName),
-      lstmNetwork(nullptr), optimizer(nullptr)
+      gpuAvailable(torch::cuda::is_available()), modelName(modelName),
+      companyName(companyName), lstmNetwork(nullptr), optimizer(nullptr)
 
 {
-  torch::nn::LSTMOptions lstmOpts1(NetworkConstants::input_size, NetworkConstants::hidden_size);
-  torch::nn::LSTMOptions lstmOpts2(NetworkConstants::hidden_size, NetworkConstants::hidden_size);
+  torch::nn::LSTMOptions lstmOpts1(NetworkConstants::input_size,
+                                   NetworkConstants::hidden_size);
+  torch::nn::LSTMOptions lstmOpts2(NetworkConstants::hidden_size,
+                                   NetworkConstants::hidden_size);
   lstmOpts1.layers(NetworkConstants::num_of_layers)
       .dropout(NetworkConstants::klsmt1DropOut)
       .with_bias(NetworkConstants::kLstmIncludeBias);
@@ -61,10 +62,12 @@ NetworkTrainer::NetworkTrainer(const std::string &modelName,
       .dropout(NetworkConstants::klsmt2DropOut)
       .with_bias(NetworkConstants::kLstmIncludeBias);
 
-  torch::nn::LinearOptions linearOpts(NetworkConstants::hidden_size, NetworkConstants::output_size);
+  torch::nn::LinearOptions linearOpts(NetworkConstants::hidden_size,
+                                      NetworkConstants::output_size);
   linearOpts.with_bias(NetworkConstants::kIncludeLinearBias);
   torch::nn::DropoutOptions dropOutOpts(NetworkConstants::kdropOutDropOut);
-  lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, dropOutOpts, linearOpts);
+  lstmNetwork = std::make_shared<StockLSTM>(lstmOpts1, lstmOpts2, dropOutOpts,
+                                            linearOpts);
 
   // Create the optimizer in pytorch
   torch::optim::AdamOptions opts(NetworkConstants::kLearningRate);
@@ -90,13 +93,13 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   bool noValidateDataSet = x_test.empty() && y_test.empty();
   bool saveFlag = false;
   bool iValidatedGood = false;
-  
+
   float running_loss = std::numeric_limits<float>::infinity(),
-      minimumLoss = std::numeric_limits<float>::infinity(),
-      training_loss = std::numeric_limits<float>::infinity(),
-      accumulated_loss = 0.0;
+        minimumLoss = std::numeric_limits<float>::infinity(),
+        training_loss = std::numeric_limits<float>::infinity(),
+        accumulated_loss = 0.0;
   int64_t epoch = 0;
-  
+
   const std::string neuralNetLogFile =
       NetworkConstants::kRootFolder + modelName + ".pt";
   const std::string predictLogFile =
@@ -106,11 +109,13 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
   target = torch::tensor(y_train);
 
   if (!noValidateDataSet) {
-    input_test = torch::tensor(x_test).view({ NetworkConstants::kPrevSamples, -1, 1});
+    input_test =
+        torch::tensor(x_test).view({NetworkConstants::kPrevSamples, -1, 1});
     target_test = torch::tensor(y_test);
   }
 
-  // Check if GPU is Available, if it is, move all input and target tensors on GPU
+  // Check if GPU is Available, if it is, move all input and target tensors on
+  // GPU
   if (gpuAvailable) {
     input = input.to(torch::kCUDA);
     target = target.to(torch::kCUDA);
@@ -195,9 +200,10 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
         accumulated_loss += std::pow(validateLoss.item<float>(), 2.0f);
       }
       // Calculate Mean Square Error
-      running_loss = std::sqrt(accumulated_loss/ input_test.size(1));
+      running_loss = std::sqrt(accumulated_loss / input_test.size(1));
       saveFlag = false;
-      // If minimumLoss is greater than the running loss, save this trained model as a checkpoint
+      // If minimumLoss is greater than the running loss, save this trained
+      // model as a checkpoint
       if (minimumLoss > running_loss) {
         saveModel(neuralNetLogFile);
         dataWriter(predictLogFile, extractData(y_pred));
@@ -218,7 +224,8 @@ std::vector<float> NetworkTrainer::fit(const std::vector<float> &x_train,
       // Set the network back to training mode
       lstmNetwork->train();
     }
-    if (epoch >= NetworkConstants::kMaxEpochs || t2 > NetworkConstants::kMaxTrainTime) {
+    if (epoch >= NetworkConstants::kMaxEpochs ||
+        t2 > NetworkConstants::kMaxTrainTime) {
       std::cout << "Cannot converge after epoch " << epoch << ": "
                 << minimumLoss << std::endl;
       return extractData(y_pred);

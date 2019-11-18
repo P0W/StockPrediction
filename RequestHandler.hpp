@@ -14,27 +14,27 @@
 #include "StockPredictor.hpp"
 
 /**
-* @class RequestHandler
-* @brief A class responsible to handle web client requests
-*/
+ * @class RequestHandler
+ * @brief A class responsible to handle web client requests
+ */
 class RequestHandler {
 public:
   /**
-  * @brief Default Constructor
-  */
+   * @brief Default Constructor
+   */
   RequestHandler();
   /**
-  * @brief Default Destructor
-  */
+   * @brief Default Destructor
+   */
   virtual ~RequestHandler();
   /**
-  * @brief Method used for starting service for handling request
-  * @param [in] stockPredictor The pointer to StockPredictor object.
-  */
+   * @brief Method used for starting service for handling request
+   * @param [in] stockPredictor The pointer to StockPredictor object.
+   */
   void setupService(const std::shared_ptr<StockPredictor> &stockPredictor);
   /**
-  * @brief Method used for starting listener and receiving request in a thread
-  */
+   * @brief Method used for starting listener and receiving request in a thread
+   */
   void run();
 
 private:

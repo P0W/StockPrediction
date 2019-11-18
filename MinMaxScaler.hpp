@@ -12,51 +12,53 @@
 #include <vector>
 
 /**
-* @class MinMaxScaler
-* @brief A class responsible for normalizing and de-normalizing given raw stock values
-*/
+ * @class MinMaxScaler
+ * @brief A class responsible for normalizing and de-normalizing given raw stock
+ * values
+ */
 template <typename T> class MinMaxScaler {
 public:
- /**
- * @brief Default Constructor 
- */
+  /**
+   * @brief Default Constructor
+   */
   MinMaxScaler();
   /**
-  * @brief Default Destructor
-  */
+   * @brief Default Destructor
+   */
   ~MinMaxScaler();
   /**
-  * @brief Deleted Copy Constructor
-  */
+   * @brief Deleted Copy Constructor
+   */
   MinMaxScaler(const MinMaxScaler &) = delete;
   /**
-  * @brief Deleted Copy Assignment Operator
-  */
+   * @brief Deleted Copy Assignment Operator
+   */
   MinMaxScaler &operator=(const MinMaxScaler &) = delete;
   /**
-  * @brief Method to fit a given data set in range [0,1].
-  * @param [in] rawData The vector of raw values (not normalized).
-  */
+   * @brief Method to fit a given data set in range [0,1].
+   * @param [in] rawData The vector of raw values (not normalized).
+   */
   std::vector<T> fit_transform(const std::vector<T> &rawData);
   /**
-  * @brief Method denormalize a given dataset.
-  * @param [in] normalizedData The vector of normalized values.
-  */
+   * @brief Method denormalize a given dataset.
+   * @param [in] normalizedData The vector of normalized values.
+   */
   std::vector<T> inverse(const std::vector<T> &normalizedData) const;
   /**
-  * @brief Overloaded parenthesis operator to implicitly perform inverse operation
-  * @param [in] normalizedVal The normalized value whose raw value is required.
-  */
+   * @brief Overloaded parenthesis operator to implicitly perform inverse
+   * operation
+   * @param [in] normalizedVal The normalized value whose raw value is required.
+   */
   T operator()(const T &normalizedVal) const;
   /**
-  * @brief Method to perfor normalization for a single raw value
-  * @param [in] rawValue The raw value whose normalized value is required.
-  */
+   * @brief Method to perfor normalization for a single raw value
+   * @param [in] rawValue The raw value whose normalized value is required.
+   */
   T transform(const T &rawValue) const;
 
 private:
-  T m_minVal;///< The minimum value in the dataset
-  T m_maxVal;///< The maximum value in the dataset
+  T m_minVal; ///< The minimum value in the dataset
+  T m_maxVal; ///< The maximum value in the dataset
 };
 
 template <typename T>

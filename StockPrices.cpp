@@ -110,7 +110,8 @@ StockPrices::StockPrices(MinMaxScaler<float> &scaler)
 
 StockPrices::~StockPrices() {}
 
-bool StockPrices::loadTimeSeries(const std::string &stockSymbol, const int64_t& maxDataSize) {
+bool StockPrices::loadTimeSeries(const std::string &stockSymbol,
+                                 const size_t &maxDataSize) {
 #ifdef WIN32
   const auto pos = stockSymbol.find_last_of('\\');
 #else
@@ -165,8 +166,7 @@ bool StockPrices::loadTimeSeries(const std::string &stockSymbol, const int64_t& 
   // Grab only maxDataSize stock prices
   if (vecSize > maxDataSize) {
     stockData.erase(std::begin(stockData),
-                    std::begin(stockData) +
-                        (vecSize - maxDataSize));
+                    std::begin(stockData) + (vecSize - maxDataSize));
   }
   stockClosePrices.reserve(stockData.size());
   dates.reserve(stockClosePrices.size());

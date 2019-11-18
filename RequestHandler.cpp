@@ -164,10 +164,10 @@ void handle_request(beast::string_view doc_root,
   std::string path = path_cat(doc_root, req.target());
   if (path.find("index.html") != std::string::npos) {
     std::cout << "WEBREQUEST Index.HTML\n";
-  } 
+  }
   // If the request is for the stock data and not for a csv file
   else if (path.find("BOM") != std::string::npos &&
-             path.find("csv") == std::string::npos) {
+           path.find("csv") == std::string::npos) {
     std::cout << "WEBREQUEST Loading Model " << path << '\n';
     std::string justSymbolPath = path;
     std::string args;
