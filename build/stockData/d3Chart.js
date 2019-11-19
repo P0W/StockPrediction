@@ -345,7 +345,7 @@ function setSelectedvalue(selectedStock) {
 // Function to request data from frontend
 function fetchData(args) {
    // The REST like URL
-   var url = "http://localhost:4242/stockData/" + currentSelectedStock.value + "?" + args;
+   var url = "http://localhost:4242/stockData/" + currentSelectedStock + "?" + args;
    // Use the built-in XMLHttpRequest from C++ backend
    fetch(url)
       // Convert reqsponse object to text
@@ -354,10 +354,10 @@ function fetchData(args) {
       .then(contents => {
          // Check if its test or train data
          if (args === 'testData' || args === 'trainData') {
-            plotTestData(currentSelectedStock.value);
+            plotTestData(currentSelectedStock);
          } else {
             // if  not train or test request it is request for future price prediction
-            createFuturePrices(currentSelectedStock.value);
+            createFuturePrices(currentSelectedStock);
          }
          // Plot the data for visualization
          d3.select("#loader").style('display', 'none');

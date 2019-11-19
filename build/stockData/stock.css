@@ -125,7 +125,7 @@ svg {
    clear: both;
  }
 
- #PrecitorContainer {
+ #PredictorContainer {
    position: relative;
    left: 100px;
    display: none;
@@ -180,4 +180,18 @@ svg {
  @keyframes animatebottom { 
    from{ bottom:-100px; opacity:0 } 
    to{ bottom:0; opacity:1 }
+ }
+
+ #info {
+    background-color: beige;
+    opacity: 0.8;
+    shape-rendering: crispEdges;
+    position: relative;
+    display: none;
+    font-family: 'Times New Roman', Times, serif;
+    height: 50px;
+    width: 175px;
+    left: 843px;
+    border-radius: 5px;
+    pointer-events: none;
  }
