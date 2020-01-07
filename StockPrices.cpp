@@ -32,7 +32,7 @@ size_t downloadDataCallback(void *ptr, size_t size, size_t nmemb,
   return written;
 }
 
-const char *quandlToken = "?api_key=B3L7ZHSVh3sV5cyRZPFW";
+const char *quandlToken = "?api_key=p0wB3L7ZHSVh3sp0wV5cyRZPFp0W";
 
 const char *url = "https://www.quandl.com/api/v3/datasets/BSE/";
 
