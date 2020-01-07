@@ -1,6 +1,8 @@
 # StockPrediction
 _BITS Final Semester Project_
 
+**NOTE TO ALL MY DEAR BITS COLLEAGUES, IN CASE YOU ARE THINKING TO COPY THE WORK, PLEASE DONT DO SO AS BITS PLAGIARISM CHECKER TOOL IS INCREDIBLE !! YOU WILL BE AWARDED ZERO !  YOU HAVE BEEN WARNED !** 
+
 1. Clone the repository
 
 2. Make sure following are installed:
