@@ -48,6 +48,9 @@ The One Epoch:
 --------------
 ![The One Epoch](https://github.com/P0W/StockPrediction/blob/master/build/img/TheEpoch.PNG)
 
+Libraries Used:
+---------------
+![Libraries](https://github.com/P0W/StockPrediction/blob/master/build/img/Libraries.PNG)
 
 The Design:
 -----------
