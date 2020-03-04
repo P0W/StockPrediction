@@ -1,4 +1,4 @@
-# StockPrediction
+# Buy and sell predictions for stock
 
 Abstract
 ---------
