@@ -73,6 +73,7 @@ How to setup:
    d. [C++ Boost/Beast](https://github.com/boostorg/beast) Inspired by [this example](https://www.boost.org/doc/libs/develop/libs/beast/example/http/server/async/http_server_async.cpp). Requires date_time and regex boost library.
    
    d. Recommended:
+      * Sign up [quandl.com](https://www.quandl.com/) for free stock prices dataset from Bombay Stock Exchanges. It provides REST service to download historical stock prices.
   
       NVIDIA CUDA 10.1 install for leveraging GPU acceleration if the graphics card suports it
       * Check if supported [here](https://developer.nvidia.com/cuda-gpus)
