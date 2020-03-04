@@ -3,6 +3,60 @@ _BITS Final Semester Project_
 
 **NOTE TO ALL MY DEAR BITS COLLEAGUES, IN CASE YOU ARE THINKING TO COPY THE WORK, PLEASE DONT DO SO AS BITS PLAGIARISM CHECKER TOOL IS INCREDIBLE !! YOU WILL BE AWARDED ZERO !  YOU HAVE BEEN WARNED !** 
 
+Abstract
+---------
+>The prediction of the share market value is of great importance to help in maximizing the profit of stock purchase while keeping the risk low. With latest advancement in technologies, the opportunity to gain a steady fortune from the share market is increased, which also helps experts to find out the most informative indicators to make a better prediction. 
+
+>Machine learning has many applications, one of which is to forecast time series. One of the most interesting (or perhaps most profitable) time series to predict are, arguably, stock prices. 
+Using features like the latest announcements about an organization, their quarterly revenue results, etc., machine learning techniques have the potential to unearth patterns and insights, that we did not see before, and these can be used to make unerringly accurate predictions.
+
+>The analysis of historical stock data sets and extracting certain trends would help to predict the future value of the stock. For prediction, a recurrent neural network will be fed with a preprocessed historical value of a stock value for getting trained on the time series. Once trained the neural network later would be used for making some predictions for next trading day(s). Based on these predictions a potential Buys and Sells for given stock can be generated for a potential swing trade.
+
+Stock Market - Buys and Sells
+-----------------------------
+>Companies need money to undertake projects. One of many ways to raise money is by issuing ownership in the company to public by means of issues share. Owning a share is akin to holding a portion of the company. These shares are then traded in share market, which these days now happens online only.
+
+![The Rumours](https://github.com/P0W/StockPrediction/blob/master/build/img/Rumours.png)
+
+>Since there is a trade involve, i.e. people purchase share from someone who is selling the same quantity of share, there’s always a place to “bargain”! Like general tendency for purchasing any physical quantity, people almost tend to buy at lower price and sell at higher price.
+
+
+Overall Idea:
+-------------
+![Overall !dea](https://github.com/P0W/StockPrediction/blob/master/build/img/SwingTrade.png)
+
+Commandline interface to train stocks:
+--------------------------------------
+![Commandline interface to train stocks](https://github.com/P0W/StockPrediction/blob/master/build/img/Cmdline.png)
+
+Front-end interface to visualize trained data:
+----------------------------------------------
+![Front-end interface to visualize trained data](https://github.com/P0W/StockPrediction/blob/master/build/img/Frontend.png)
+
+Sample Visulization using d3.js:
+--------------------------------
+![Sample Visualization](https://github.com/P0W/StockPrediction/blob/master/build/img/Prediction.png)
+
+Dataset Preparation:
+--------------------
+> For feeding the data to the neural network, the stock data needs to be reshaped. For each 5 previous stock prices we would train for the 6th Stock Price!
+
+![Dataset](https://github.com/P0W/StockPrediction/blob/master/build/img/Dataset.png)
+
+
+The One Epoch:
+--------------
+![The One Epoch](https://github.com/P0W/StockPrediction/blob/master/build/img/TheEpoch.PNG)
+
+
+The Design:
+-----------
+![Design](https://github.com/P0W/StockPrediction/blob/master/build/img/uml.png)
+
+
+>----------------------------------------------------------------------------------------
+How to setup:
+-------------
 1. Clone the repository
 
 2. Make sure following are installed:
